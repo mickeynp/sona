@@ -2,10 +2,16 @@
 #  -*- coding: utf-8 -*-
 
 import logging
-from pysemantic.indexer import Indexer, NoNodeError
 from StringIO import StringIO
-import unittest
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
+
+from pysemantic.indexer import Indexer, NoNodeError
 import astroid.nodes
+
+
 log = logging.getLogger(__name__)
 
 
