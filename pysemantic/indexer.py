@@ -19,6 +19,7 @@ log = logging.getLogger(__name__)
 
 class BaseSemanticError(Exception):
     pass
+
 class NoNodeError(BaseSemanticError):
     def __init__(self, class_type, attr, query):
         msg = 'Cannot find a node {0!r} with attr {1!r} matching query {2!r}'\
@@ -109,7 +110,7 @@ class Indexer(object):
 
 
     # Specific finders for various node classes.
-    def _find_by_attr(self, class_type, attr, expected_attr_value):
+    def _compare_by_attr(self, class_type, attr, expected_attr_value):
         nodes = self.find(class_type)
         match = None
         for node in nodes:
@@ -123,4 +124,4 @@ class Indexer(object):
             return match
 
     def find_function_by_name(self, name):
-        return self._find_by_attr(Function, 'name', name)
+        return self._compare_by_attr(Function, 'name', name)
