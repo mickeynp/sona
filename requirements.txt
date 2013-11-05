@@ -1,2 +1,4 @@
+pyparsing
 nose
 astroid
+unittest2
