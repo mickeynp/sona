@@ -65,26 +65,26 @@ class BEPTest(unittest.TestCase):
 
     def test_term(self):
         bep = BooleanExpressionParser()
-        pt = bep.Term.parseString('fn:test_attr == "hello"').asList()[0]
+        pt = bep.Term.parseString('fn:name == "hello"').asList()[0]
         self.assertEqual(pt.pop(0), 'fn')
-        self.assertEqual(pt.pop(0), 'test_attr')
+        self.assertEqual(pt.pop(0), 'name')
         self.assertEqual(pt.pop(0), '==')
         self.assertEqual(pt.pop(0), 'hello')
 
     def test_term_error(self):
         bep = BooleanExpressionParser()
         with self.assertRaises(pyparsing.ParseException):
-            pt = bep.Term.parseString('fn:test_attr <> "hello"')
+            pt = bep.Term.parseString('fn:name <> "hello"')
         with self.assertRaises(pyparsing.ParseException):
-            pt = bep.Term.parseString('fn:test_attr ==')
+            pt = bep.Term.parseString('fn:name ==')
         with self.assertRaises(pyparsing.ParseException):
             pt = bep.Term.parseString('fn: ==')
 
     def test_expression(self):
         bep = BooleanExpressionParser()
-        pt = bep.PrecExpr.parseString('fn:name == "mymethod" or cls:name != "myclass" and not cls:foo != "foo"')
+        pt = bep.PrecExpr.parseString('fn:name == "mymethod" or cls:name != "myclass" and not cls:type != "type"')
         expected = [['fn', 'name', '==', 'mymethod'], 'or',
                     ['cls', 'name', '!=', 'myclass'], 'and', 'not',
-                    ['cls', 'foo', '!=', 'foo']]
+                    ['cls', 'type', '!=', 'type']]
         self.assertListEqual(pt.asList(), expected)
 
