@@ -1,3 +1,4 @@
 /pysemantic.egg-info
 *flymake*
 *.pyc
+.#*
