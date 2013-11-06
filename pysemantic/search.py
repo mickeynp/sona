@@ -40,26 +40,51 @@ class SemanticSearcher(object):
 
             }
         bep = BooleanExpressionParser(query)
-        result_stack = []
-
+        matches = []
+        # This is where we push the results (1 for True, 0 for False)
+        # for the purpose of boolean evaluation, and at least one
+        # operator. I cannot, at this time, conceive of a scenario in
+        # which this stack will ever contain more than three eleents
+        # at a time.
+        stack = []
         # iterate over every search term and search operator after
         # parsing the string.
         for node in bep.iter_tree():
+            assert len(stack) <= 3, 'SemanticSearcher stack length exceeds 3.\
+ This should never occur!'
             # If the node is a SearchTerm we need to use the details
             # stored within it to query for the <node_type> with a
             # <node_attr> that is <conditional> to <node_value>.
             if isinstance(node, SearchTerm):
                 try:
                     indexer_fn = INDEXER_MAPS[(node.search_type, node.search_attr)]
+
                     # This actually returns a list of nodes that matches the query.
                     nodes = indexer_fn(indexer, node.comp_value, comparator=node.conditional)
+
+                    # Push False to the stack if we found no nodes, and True
+                    # if we did find at least one.
+                    stack.append(False if not nodes else True)
                     for node in nodes:
-                        result_stack.append(node)
+                        matches.append(node)
+
                 except KeyError:
                     raise NoSemanticIndexerError('{0!r} does not have a valid locator assigned to it.'.format(node))
                 except NoNodeError:
                     raise
-        return result_stack
+            # If the node is a SearchOperator that means we must have
+            if isinstance(node, SearchOperator):
+                stack.append(node)
+            # It's time to evaluate the items on the stack.
+            if len(stack) == 3:
+                # Stack should look like [bool, op, bool]
+                left = stack.pop()
+                operator = stack.pop()
+                right = stack.pop()
+                result = operator.operator(left, right)
+                # Set the stack to the result
+                stack = [result]
+        return matches
 
     def search(self, query):
         for filename in self.files:

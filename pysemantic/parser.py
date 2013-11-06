@@ -83,9 +83,6 @@ class BooleanExpressionParser(object):
 
     # A tree of all items pulled from the node
     _tree = []
-    # A stack used for storing search terms until a suitable Operator
-    # comes along.
-    _stack = []
     IDENTIFIER = printables
 
     String = QuotedString('"')
@@ -105,13 +102,11 @@ class BooleanExpressionParser(object):
         l = token.asList()[0]
         st = SearchTerm(*l)
         self._tree.append(st)
-        # TODO: We should not ever have more than two here.
-        self._stack.append(st)
 
     def parse_Operator(self, token):
         l = token.asList()[0]
         op = SearchOperator(l)
-        self._stack.append(op)
+        self._tree.append(op)
 
     def _apply_transformers(self):
         """Applies setParseActions to relevant tokens."""
