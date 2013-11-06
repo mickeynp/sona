@@ -9,7 +9,7 @@ except ImportError:
     import unittest
 
 from pysemantic.indexer import Indexer, NoNodeError
-from pysemantic.parser import BooleanExpressionParser
+from pysemantic.parser import BooleanExpressionParser, SearchTerm, SearchOperator
 import pyparsing
 import astroid.nodes
 
@@ -66,13 +66,16 @@ class BEPTest(unittest.TestCase):
     def test_term(self):
         bep = BooleanExpressionParser()
         pt = bep.Term.parseString('fn:name == "hello"').asList()[0]
+
         self.assertEqual(pt.pop(0), 'fn')
         self.assertEqual(pt.pop(0), 'name')
         self.assertEqual(pt.pop(0), '==')
         self.assertEqual(pt.pop(0), 'hello')
+        st = bep._tree[0]
+        self.assertIsInstance(st, SearchTerm)
 
     def test_term_error(self):
-        bep = BooleanExpressionParser()
+        bep = BooleanExpressionParser('')
         with self.assertRaises(pyparsing.ParseException):
             pt = bep.Term.parseString('fn:name <> "hello"')
         with self.assertRaises(pyparsing.ParseException):
@@ -83,8 +86,10 @@ class BEPTest(unittest.TestCase):
     def test_expression(self):
         bep = BooleanExpressionParser()
         pt = bep.PrecExpr.parseString('fn:name == "mymethod" or cls:name != "myclass" and not cls:type != "type"')
-        expected = [['fn', 'name', '==', 'mymethod'], 'or',
-                    ['cls', 'name', '!=', 'myclass'], 'and', 'not',
+        expected = [['fn', 'name', '==', 'mymethod'], ['or'],
+                    ['cls', 'name', '!=', 'myclass'], ['and', 'not'],
                     ['cls', 'type', '!=', 'type']]
         self.assertListEqual(pt.asList(), expected)
+
+
 

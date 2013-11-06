@@ -41,6 +41,15 @@ class FunctionVisitor(AsStringVisitor, ASTWalker):
         print node
 
 
+
+# def autoyield(f):
+#     """Takes a return value from the decorated function and iterates
+#     over every item, yielding it."""
+#     def function_wrapper(*args, **kwargs):
+#         res = f(*args, **kwargs)
+#     return function_wrapper
+
+
 class LocalsVisitor(ASTWalker):
     """visit a project by traversing the locals dictionary"""
 
@@ -89,6 +98,7 @@ class Indexer(object):
 
     def __init__(self, s):
         """Builds an Indexer given s, a string object."""
+        self._module_string = s
         tree = builder.AstroidBuilder().string_build(s)
         self.tree = tree
 
@@ -109,19 +119,21 @@ class Indexer(object):
         return nodes.get(node_class, [])
 
 
-    # Specific finders for various node classes.
-    def _compare_by_attr(self, class_type, attr, expected_attr_value):
+    # Specific locators for various node classes.
+    def _compare_by_attr(self, class_type, attr,
+                         expected_attr_value, comparator=None):
         nodes = self.find(class_type)
-        match = None
+        matches = []
+        if comparator is None:
+            comparator = self.compare
         for node in nodes:
-            if self.compare(getattr(node, attr),
-                            expected_attr_value):
-                match = node
-                break
-        if match is None:
+            if comparator(getattr(node, attr),
+                          expected_attr_value):
+                matches.append(node)
+        if not matches:
             raise NoNodeError(class_type, attr, expected_attr_value)
         else:
-            return match
+            return matches
 
-    def find_function_by_name(self, name):
-        return self._compare_by_attr(Function, 'name', name)
+    def find_function_by_name(self, name, comparator=None):
+        return self._compare_by_attr(Function, 'name', name, comparator)
