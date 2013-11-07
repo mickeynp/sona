@@ -71,30 +71,11 @@ class AssertionParser(object):
 
     Query = Group(Expression) + Group(ZeroOrMore(Suppress(";") + Expression))
 
-    def parse_Term(self, token):
-        """Parses a Term token."""
-        l = token.asList()[0]
-        st = SearchTerm(*l)
-        self._tree.append(st)
-
-    def parse_Operator(self, token):
-        l = token.asList()[0]
-        op = SearchOperator(l)
-        self._tree.append(op)
-
-    def _apply_transformers(self):
-        """Applies setParseActions to relevant tokens."""
-        self.Term.setParseAction(self.parse_Term)
-        # self.Operator.setParseAction(self.parse_Operator)
-        # self.Negation.setParseAction(self.parse_Operator)
-
     def __init__(self, query=''):
         self._tree = []
-        self._stack = []
         self._query = query
-        #self._apply_transformers()
         if query:
-            self.Query.parseString(query, parseAll=True)
+            self._tree = self.Query.parseString(query, parseAll=True)
 
     def iter_tree(self):
         for search_node in self._tree:

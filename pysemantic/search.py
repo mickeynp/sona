@@ -23,7 +23,20 @@ class SemanticSearcherError(Exception):
     pass
 class NoSemanticIndexerError(SemanticSearcherError):
     pass
+class InvalidTermError(SemanticSearcherError):
+    pass
 
+
+INDEXER_MAPS = {
+    # <Node type>, <Equiv Attr on Node Class>
+    ('fn', 'name'): Indexer.find_function_by_name,
+
+    }
+# TODO: This should be in parser.py?
+COMPARATOR_MAP = {
+    '==': lambda a,b: a == b,
+    '!=': lambda a,b: a != b,
+    }
 
 class SemanticSearcher(object):
 
@@ -34,37 +47,40 @@ class SemanticSearcher(object):
         self.files = []
 
     def _find_query_in_module(self, query, indexer):
-        INDEXER_MAPS = {
-            # <Node Class>, <Equiv Attr on Node Class>
-            (Function, 'name'): Indexer.find_function_by_name,
-
-            }
         ap = AssertionParser(query)
         matches = []
-        # This is where we push the results (1 for True, 0 for False)
-        # for the purpose of boolean evaluation, and at least one
-        # operator. I cannot, at this time, conceive of a scenario in
-        # which this stack will ever contain more than three eleents
-        # at a time.
-        stack = []
-        # iterate over every search term and search operator after
-        # parsing the string.
-        while ap.iter_tree():
-            assert len(stack) <= 3, 'SemanticSearcher stack length exceeds 3.\
- This should never occur!'
-            # If the node is a SearchTerm we need to use the details
-            # stored within it to query for the <node_type> with a
-            # <node_attr> that is <conditional> to <node_value>.
-            if isinstance(node, object):
+
+        # Iterate over the tree. A tree is made up of many nested
+        # lists with the following pattern:
+        #
+        # [[[term], ...],
+        #  [[term, ...], ...], ...]
+        for expression in ap.iter_tree():
+            # Each expression, in turn, has N number of terms, which
+            # in turn is made up of a field node type; a field
+            # attribute; a conditional; and a value.
+            for term in expression:
+                if not len(term) in [2, 4]:
+                    raise InvalidTermError('Term {0!r} contained {1} items instead of\
+ the expected 2 or 4'.format(term, len(term)))
                 try:
-                    indexer_fn = INDEXER_MAPS[(node.search_type, node.search_attr)]
+                    if len(term) == 2:
+                        node_type, node_attr = term
+                        # Blank these out if term only has two
+                        # elements. That means it's of the form
+                        # "type:attr" which is shorthand for "match
+                        # everything".
+                        conditional = None
+                        comp_value = None
+                    else:
+                        node_type, node_attr, conditional, comp_value = term
+
+                    comparator = COMPARATOR_MAP[conditional]
+                    indexer_fn = INDEXER_MAPS[(node_type, node_attr)]
 
                     # This actually returns a list of nodes that matches the query.
-                    nodes = indexer_fn(indexer, node.comp_value, comparator=node.conditional)
+                    nodes = indexer_fn(indexer, comp_value, comparator=comparator)
 
-                    # Push False to the stack if we found no nodes, and True
-                    # if we did find at least one.
-                    stack.append(False if not nodes else True)
                     for node in nodes:
                         matches.append(node)
 
@@ -72,18 +88,18 @@ class SemanticSearcher(object):
                     raise NoSemanticIndexerError('{0!r} does not have a valid locator assigned to it.'.format(node))
                 except NoNodeError:
                     raise
-            # If the node is a SearchOperator that means we must have
-            if isinstance(node, object):
-                stack.append(node)
-            # It's time to evaluate the items on the stack.
-            if len(stack) == 3:
-                # Stack should look like [bool, op, bool]
-                left = stack.pop()
-                operator = stack.pop()
-                right = stack.pop()
-                result = operator.operator(left, right)
-                # Set the stack to the result
-                stack = [result]
+                # # If the node is a SearchOperator that means we must have
+                # if isinstance(node, object):
+                #     stack.append(node)
+                # # It's time to evaluate the items on the stack.
+                # if len(stack) == 3:
+                #     # Stack should look like [bool, op, bool]
+                #     left = stack.pop()
+                #     operator = stack.pop()
+                #     right = stack.pop()
+                #     result = operator.operator(left, right)
+                #     # Set the stack to the result
+                #     stack = [result]
         return matches
 
     def search(self, query):

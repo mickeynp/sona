@@ -37,7 +37,6 @@ class SearchTest(unittest.TestCase):
     def tearDown(self):
         self.tmpfile = None
 
-    @unittest.SkipTest
     def test_find_function_by_name_simple(self):
         self.searcher.add_file(self.tmpfile.name)
         self.assertEqual(self.searcher.files, [self.tmpfile.name])
@@ -61,7 +60,6 @@ class SearchTest(unittest.TestCase):
         self.assertIsInstance(node, Function)
         self.assertEqual(node.name, 'fn2')
 
-    @unittest.SkipTest
     def test_find_function_by_name_complex(self):
         self.searcher.add_file(self.tmpfile.name)
         self.assertEqual(self.searcher.files, [self.tmpfile.name])
@@ -78,11 +76,10 @@ class SearchTest(unittest.TestCase):
         self.assertEqual(node.name, 'fn1')
 
 
-    @unittest.SkipTest
     def test_find_function_by_name_invalid(self):
         self.searcher.add_file(self.tmpfile.name)
         self.assertEqual(self.searcher.files, [self.tmpfile.name])
 
-        # This conjunction is clearly impossible. There is no function named fn1 AND fn2.
-        nodes = list(self.searcher.search('fn:name == "fn1", fn:name == "fn2"'))
-        self.assert_(len(nodes) == 0)
+        # Should be 3 because all functions named fn1 and all functions not named fn1 = set(fn1, fn2, fn3)
+        nodes = list(self.searcher.search('fn:name == "fn1", fn:name != "fn1"'))
+        self.assert_(len(nodes) == 3)
