@@ -2,3 +2,4 @@
 *flymake*
 *.pyc
 .#*
+/README.html
