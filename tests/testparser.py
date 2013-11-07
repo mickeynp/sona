@@ -90,10 +90,13 @@ class AssertionParserTest(unittest.TestCase):
     def test_query(self):
         ap = AssertionParser()
         pt = ap.Query.parseString('fn:name; cls:name == "foo"')
-        self.assertEqual(pt.asList(), [['fn', 'name'], ['cls', 'name', '==', 'foo']])
+        self.assertEqual(pt.asList(), [[['fn', 'name']], [['cls', 'name', '==', 'foo']]])
+
+        pt = ap.Query.parseString('fn:name == "hello", fn:name != "goodbye"; cls:name == "test"')
+        self.assertEqual(pt.asList(), [[['fn', 'name', '==', 'hello'], ['fn', 'name', '!=', 'goodbye']], [['cls', 'name', '==', 'test']]])
 
         pt = ap.Query.parseString('fn:name; cls:name')
-        self.assertEqual(pt.asList(), [['fn', 'name'], ['cls', 'name']])
+        self.assertEqual(pt.asList(), [[['fn', 'name']], [['cls', 'name']]])
 
         with self.assertRaises(pyparsing.ParseException):
             pt = ap.Query.parseString('fn:name cls:name, fn:name', parseAll=True)

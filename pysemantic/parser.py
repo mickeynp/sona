@@ -69,7 +69,7 @@ class AssertionParser(object):
 
     Expression = Group(Term | Field) + ZeroOrMore(Suppress(",") + Group(Term | Field))
 
-    Query = Expression + ZeroOrMore(Suppress(";") + Expression)
+    Query = Group(Expression) + Group(ZeroOrMore(Suppress(";") + Expression))
 
     def parse_Term(self, token):
         """Parses a Term token."""

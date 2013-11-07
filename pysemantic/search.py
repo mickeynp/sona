@@ -49,7 +49,7 @@ class SemanticSearcher(object):
         stack = []
         # iterate over every search term and search operator after
         # parsing the string.
-        for node in ap.iter_tree():
+        while ap.iter_tree():
             assert len(stack) <= 3, 'SemanticSearcher stack length exceeds 3.\
  This should never occur!'
             # If the node is a SearchTerm we need to use the details
