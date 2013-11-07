@@ -54,48 +54,22 @@ class SearchTerm(object):
         self.comp_value = comp_value
 
 
-class SearchOperator(object):
+class AssertionParser(object):
 
-    # Dictionary of operator strings and equivalent lambdas that carry out
-    # the actual boolean test.
-    OPERATORS = {
-        'and': lambda a,b: a and b,
-        'or': lambda a,b: a or b,
-        'not': lambda a: not a,
-        }
 
-    def __init__(self, node_operator):
-        self.operator = self.OPERATORS[node_operator]
+    IDENTIFIER = alphanums + "_"
 
-class BooleanExpressionParser(object):
-    """Rudimentary Boolean Expression Parser
-
-    Fairly rough-and-tumble EBNF:
-
-    string = '"' , { printable characters sans '"'  }, '"' ;
-
-    field = "fn" | "class" | ... , ":", "name" | "type" ... ;
-    conditional = "==" | "!=" ;
-    operator = "or" | "and" ;
-    term = ( field , conditional , string ) ;
-    expression =  term , { [ operator, term ] } ;
-    """
-
-    # A tree of all items pulled from the node
-    _tree = []
-    IDENTIFIER = printables
-
+    BoolConstant = Keyword("True") | Keyword("False")
     String = QuotedString('"')
-    Field = Word(alphas) + Suppress(Literal(':')) + Word(IDENTIFIER)
-    Conditional = (Keyword("==") | Keyword("!="))
-    Operator = Keyword("or") | Keyword("and")
-    Negation = Keyword("not")
-    Term = Group(Field + Conditional + String)
-    Expression = Forward()
-    Expression << Term + ZeroOrMore(Group(Operator + Optional(Negation)) + Expression)
 
-    PrecExpr = operatorPrecedence(Expression, [(Negation, 1, opAssoc.RIGHT),
-                                               (Operator, 2,opAssoc.LEFT),])
+    Field = Word(IDENTIFIER) + Suppress(Literal(':')) + Word(IDENTIFIER)
+    Conditional = (Keyword("==") | Keyword("!="))
+
+    Term = Field + Conditional + String
+
+    Expression = Group(Term | Field) + ZeroOrMore(Suppress(",") + Group(Term | Field))
+
+    Query = Expression + ZeroOrMore(Suppress(";") + Expression)
 
     def parse_Term(self, token):
         """Parses a Term token."""
@@ -111,21 +85,18 @@ class BooleanExpressionParser(object):
     def _apply_transformers(self):
         """Applies setParseActions to relevant tokens."""
         self.Term.setParseAction(self.parse_Term)
-        self.Operator.setParseAction(self.parse_Operator)
-        self.Negation.setParseAction(self.parse_Operator)
+        # self.Operator.setParseAction(self.parse_Operator)
+        # self.Negation.setParseAction(self.parse_Operator)
 
     def __init__(self, query=''):
         self._tree = []
         self._stack = []
         self._query = query
-        self._apply_transformers()
+        #self._apply_transformers()
         if query:
-            self.PrecExpr.parseString(query)
+            self.Query.parseString(query, parseAll=True)
 
     def iter_tree(self):
         for search_node in self._tree:
             yield search_node
 
-if __name__ == '__main__':
-    bep = BooleanExpressionParser()
-    pt = bep.PrecExpr.parseString('fn:name == "mymethod" or cls:name != "myclass" and not cls:type != "type"')

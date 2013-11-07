@@ -37,6 +37,7 @@ class SearchTest(unittest.TestCase):
     def tearDown(self):
         self.tmpfile = None
 
+    @unittest.SkipTest
     def test_find_function_by_name_simple(self):
         self.searcher.add_file(self.tmpfile.name)
         self.assertEqual(self.searcher.files, [self.tmpfile.name])
@@ -60,6 +61,7 @@ class SearchTest(unittest.TestCase):
         self.assertIsInstance(node, Function)
         self.assertEqual(node.name, 'fn2')
 
+    @unittest.SkipTest
     def test_find_function_by_name_complex(self):
         self.searcher.add_file(self.tmpfile.name)
         self.assertEqual(self.searcher.files, [self.tmpfile.name])

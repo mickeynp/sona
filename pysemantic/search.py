@@ -4,7 +4,7 @@
 import logging
 import os
 
-from pysemantic.parser import BooleanExpressionParser, SearchOperator, SearchTerm
+from pysemantic.parser import AssertionParser
 from pysemantic.indexer import Indexer, NoNodeError
 
 from astroid import builder, InferenceError, NotFoundError
@@ -39,7 +39,7 @@ class SemanticSearcher(object):
             (Function, 'name'): Indexer.find_function_by_name,
 
             }
-        bep = BooleanExpressionParser(query)
+        ap = AssertionParser(query)
         matches = []
         # This is where we push the results (1 for True, 0 for False)
         # for the purpose of boolean evaluation, and at least one
@@ -49,13 +49,13 @@ class SemanticSearcher(object):
         stack = []
         # iterate over every search term and search operator after
         # parsing the string.
-        for node in bep.iter_tree():
+        for node in ap.iter_tree():
             assert len(stack) <= 3, 'SemanticSearcher stack length exceeds 3.\
  This should never occur!'
             # If the node is a SearchTerm we need to use the details
             # stored within it to query for the <node_type> with a
             # <node_attr> that is <conditional> to <node_value>.
-            if isinstance(node, SearchTerm):
+            if isinstance(node, object):
                 try:
                     indexer_fn = INDEXER_MAPS[(node.search_type, node.search_attr)]
 
@@ -73,7 +73,7 @@ class SemanticSearcher(object):
                 except NoNodeError:
                     raise
             # If the node is a SearchOperator that means we must have
-            if isinstance(node, SearchOperator):
+            if isinstance(node, object):
                 stack.append(node)
             # It's time to evaluate the items on the stack.
             if len(stack) == 3:

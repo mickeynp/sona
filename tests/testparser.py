@@ -2,20 +2,20 @@
 #  -*- coding: utf-8 -*-
 
 import logging
-from StringIO import StringIO
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest
 
-from pysemantic.indexer import Indexer, NoNodeError
-from pysemantic.parser import BooleanExpressionParser, SearchTerm, SearchOperator
+from pysemantic.indexer import NoNodeError
+from pysemantic.parser import AssertionParser
 import pyparsing
 import astroid.nodes
 
 log = logging.getLogger(__name__)
 
-class BEPTest(unittest.TestCase):
+
+class AssertionParserTest(unittest.TestCase):
 
     def setUp(self):
         pass
@@ -24,72 +24,81 @@ class BEPTest(unittest.TestCase):
         pass
 
     def test_string(self):
-        bep = BooleanExpressionParser()
-        pt = bep.String.parseString('"Test String"')
+        ap = AssertionParser()
+        pt = ap.String.parseString('"Test String"')
         self.assertEqual(pt.pop(), 'Test String')
 
     def test_string_error(self):
-        bep = BooleanExpressionParser()
+        ap = AssertionParser()
         with self.assertRaises(pyparsing.ParseException):
-            bep.String.parseString("'Test String'")
+            ap.String.parseString("'Test String'")
 
     def test_field(self):
-        bep = BooleanExpressionParser()
-        pt = bep.Field.parseString("testfield:testattr")
+        ap = AssertionParser()
+        pt = ap.Field.parseString("testfield:testattr")
         self.assertEqual(pt.pop(0), 'testfield')
         self.assertEqual(pt.pop(0), 'testattr')
 
     def test_field_error(self):
-        bep = BooleanExpressionParser()
+        ap = AssertionParser()
         # missing something : and second half
         with self.assertRaises(pyparsing.ParseException):
-            pt = bep.Field.parseString("testfield")
+            pt = ap.Field.parseString("testfield")
         with self.assertRaises(pyparsing.ParseException):
-            pt = bep.Field.parseString("testfield:")
+            pt = ap.Field.parseString("testfield:")
         with self.assertRaises(pyparsing.ParseException):
-            pt = bep.Field.parseString(":foo")
+            pt = ap.Field.parseString(":foo")
 
     def test_conditional(self):
-        bep = BooleanExpressionParser()
-        pt = bep.Conditional.parseString("==")
+        ap = AssertionParser()
+        pt = ap.Conditional.parseString("==")
         self.assertEqual(pt.pop(), '==')
-        pt = bep.Conditional.parseString("!=")
+        pt = ap.Conditional.parseString("!=")
         self.assertEqual(pt.pop(), '!=')
 
-    def test_operator(self):
-        bep = BooleanExpressionParser()
-        pt = bep.Operator.parseString("or")
-        self.assertEqual(pt.pop(), 'or')
-        pt = bep.Operator.parseString("and")
-        self.assertEqual(pt.pop(), 'and')
-
     def test_term(self):
-        bep = BooleanExpressionParser()
-        pt = bep.Term.parseString('fn:name == "hello"').asList()[0]
+        ap = AssertionParser()
+        pt = ap.Term.parseString('fn:name == "hello"').asList()
 
         self.assertEqual(pt.pop(0), 'fn')
         self.assertEqual(pt.pop(0), 'name')
         self.assertEqual(pt.pop(0), '==')
         self.assertEqual(pt.pop(0), 'hello')
-        st = bep._tree[0]
-        self.assertIsInstance(st, SearchTerm)
 
     def test_term_error(self):
-        bep = BooleanExpressionParser('')
+        ap = AssertionParser()
         with self.assertRaises(pyparsing.ParseException):
-            pt = bep.Term.parseString('fn:name <> "hello"')
+            pt = ap.Term.parseString('fn:name <> "hello"')
         with self.assertRaises(pyparsing.ParseException):
-            pt = bep.Term.parseString('fn:name ==')
+            pt = ap.Term.parseString('fn:name ==')
         with self.assertRaises(pyparsing.ParseException):
-            pt = bep.Term.parseString('fn: ==')
+            pt = ap.Term.parseString('fn: ==')
 
-    def test_expression(self):
-        bep = BooleanExpressionParser()
-        pt = bep.PrecExpr.parseString('fn:name == "mymethod" or cls:name != "myclass" and not cls:type != "type"')
-        expected = [['fn', 'name', '==', 'mymethod'], ['or'],
-                    ['cls', 'name', '!=', 'myclass'], ['and', 'not'],
-                    ['cls', 'type', '!=', 'type']]
-        self.assertListEqual(pt.asList(), expected)
+    def test_expr(self):
+        ap = AssertionParser()
+        pt = ap.Expression.parseString('fn:name == "foo" , cls:name == "bar"')
+        assertion1 = pt.asList()[0]
+        assertion2 = pt.asList()[1]
+        self.assertEqual(assertion1, ['fn', 'name', '==', 'foo'])
+        self.assertEqual(assertion2, ['cls', 'name', '==', 'bar'])
+        with self.assertRaises(pyparsing.ParseException):
+            pt = ap.Term.parseString('fn:name == , cls:name')
+
+        pt = ap.Expression.parseString('fn:name, cls:name')
+        self.assertEqual(pt.asList(), [['fn', 'name'], ['cls', 'name']])
+
+    def test_query(self):
+        ap = AssertionParser()
+        pt = ap.Query.parseString('fn:name; cls:name == "foo"')
+        self.assertEqual(pt.asList(), [['fn', 'name'], ['cls', 'name', '==', 'foo']])
+
+        pt = ap.Query.parseString('fn:name; cls:name')
+        self.assertEqual(pt.asList(), [['fn', 'name'], ['cls', 'name']])
+
+        with self.assertRaises(pyparsing.ParseException):
+            pt = ap.Query.parseString('fn:name cls:name, fn:name', parseAll=True)
+
+
 
 
 

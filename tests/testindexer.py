@@ -36,7 +36,7 @@ class IndexerTest(unittest.TestCase):
         self.assertEqual(self.index.find(astroid.nodes.Pass), [])
 
     def test_find_function_by_name(self):
-        node = self.index.find_function_by_name('fn2')
+        node = self.index.find_function_by_name('fn2').pop()
         self.assertIsInstance(node, astroid.nodes.Function)
         self.assertEqual(node.name, 'fn2')
 
