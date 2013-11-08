@@ -5,6 +5,8 @@ import logging
 # Terrible...
 from pyparsing import *
 
+ParserElement.enablePackrat()
+
 log = logging.getLogger(__name__)
 
 
