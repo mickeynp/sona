@@ -65,11 +65,7 @@ class SearchTest(unittest.TestCase):
         self.assertEqual(self.searcher.files, [self.tmpfile.name])
 
         nodes = list(self.searcher.search('fn:name == "fn1", fn:name == "fn2"'))
-        self.assert_(len(nodes) == 2)
-
-        node = nodes.pop()
-        self.assertIsInstance(node, Function)
-        self.assertEqual(node.name, 'fn2')
+        self.assert_(len(nodes) == 1)
 
         node = nodes.pop()
         self.assertIsInstance(node, Function)
@@ -80,6 +76,15 @@ class SearchTest(unittest.TestCase):
         self.searcher.add_file(self.tmpfile.name)
         self.assertEqual(self.searcher.files, [self.tmpfile.name])
 
-        # Should be 3 because all functions named fn1 and all functions not named fn1 = set(fn1, fn2, fn3)
+        # Should be 1 because the first assertion limits the search
+        # set to just functions named "fn1", and the second tries to
+        # find all the ones not named "fn1" -- which obviously fails.
         nodes = list(self.searcher.search('fn:name == "fn1", fn:name != "fn1"'))
-        self.assert_(len(nodes) == 3)
+        self.assert_(len(nodes) == 1)
+
+    def test_multiple_expressions(self):
+        self.searcher.add_file(self.tmpfile.name)
+        self.assertEqual(self.searcher.files, [self.tmpfile.name])
+        nodes = list(self.searcher.search('fn:name == "fn1"; fn:name == "fn2"'))
+        self.assert_(len(nodes) == 2)
+        self.assertEqual([node.name for node in nodes], ['fn1', 'fn2'])

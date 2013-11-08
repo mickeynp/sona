@@ -120,9 +120,15 @@ class Indexer(object):
 
 
     # Specific locators for various node classes.
-    def _compare_by_attr(self, class_type, attr,
-                         expected_attr_value=None, comparator=None):
-        nodes = self.find(class_type)
+    def _compare_by_attr(self, class_type, attr, expected_attr_value=None,
+                         comparator=None, node_list=None):
+        # If we are given an explicit list of nodes to search, use
+        # that instead; otherwise, go find all the nodes matching
+        # class_type.
+        if node_list is None:
+            nodes = self.find(class_type)
+        else:
+            nodes = node_list
         matches = []
         if comparator is None:
             comparator = self.compare
@@ -140,5 +146,5 @@ class Indexer(object):
         else:
             return matches
 
-    def find_function_by_name(self, expected_attr_value=None, comparator=None):
-        return self._compare_by_attr(Function, 'name', expected_attr_value, comparator)
+    def find_function_by_name(self, expected_attr_value=None, comparator=None, node_list=None):
+        return self._compare_by_attr(Function, 'name', expected_attr_value, comparator, node_list)

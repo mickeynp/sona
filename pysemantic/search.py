@@ -39,12 +39,22 @@ COMPARATOR_MAP = {
     }
 
 class SemanticSearcher(object):
+    """Semantic Searcher class. Returns a list of matching nodes given a string query.
+
+
+    aggressive_search - if True, an assertion that returns NoNodeError
+    will not halt the evaluation of that expression. If False, any
+    assertion that returns NoNodeError is instead halted, its results
+    up until then kept, and the next expression is evaluated."""
+    aggressive_search = False
+
 
     def add_file(self, filepath):
         self.files.append(filepath)
 
     def __init__(self):
         self.files = []
+        self.aggressive_search = False
 
     def _find_query_in_module(self, query, indexer):
         ap = AssertionParser(query)
@@ -56,6 +66,7 @@ class SemanticSearcher(object):
         # [[[term], ...],
         #  [[term, ...], ...], ...]
         for expression in ap.iter_tree():
+            nodes = None
             # Each expression, in turn, has N number of terms, which
             # in turn is made up of a field node type; a field
             # attribute; a conditional; and a value.
@@ -78,8 +89,19 @@ class SemanticSearcher(object):
                     comparator = COMPARATOR_MAP[conditional]
                     indexer_fn = INDEXER_MAPS[(node_type, node_attr)]
 
-                    # This actually returns a list of nodes that matches the query.
-                    nodes = indexer_fn(indexer, comp_value, comparator=comparator)
+                    try:
+                        # This actually returns a list of nodes that matches the query.
+                        nodes = indexer_fn(indexer, comp_value, comparator=comparator, node_list=nodes)
+
+                    except NoNodeError:
+                        # It's perfectly OK if NoNodeError is raised
+                        # -- all that means is one leg of the query
+                        # failed to match.
+                        nodes = None
+
+                        # Break if aggressive_search is not True.
+                        if not self.aggressive_search:
+                            break
 
                     for node in nodes:
                         matches.append(node)
@@ -88,18 +110,6 @@ class SemanticSearcher(object):
                     raise NoSemanticIndexerError('{0!r} does not have a valid locator assigned to it.'.format(node))
                 except NoNodeError:
                     raise
-                # # If the node is a SearchOperator that means we must have
-                # if isinstance(node, object):
-                #     stack.append(node)
-                # # It's time to evaluate the items on the stack.
-                # if len(stack) == 3:
-                #     # Stack should look like [bool, op, bool]
-                #     left = stack.pop()
-                #     operator = stack.pop()
-                #     right = stack.pop()
-                #     result = operator.operator(left, right)
-                #     # Set the stack to the result
-                #     stack = [result]
         return matches
 
     def search(self, query):
