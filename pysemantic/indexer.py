@@ -15,7 +15,6 @@ log = logging.getLogger(__name__)
 
 
 
-# /class[name = 'foo', parent = 'object'], assignment[var = 'x']
 
 class BaseSemanticError(Exception):
     pass
@@ -29,29 +28,7 @@ class NoNodeError(BaseSemanticError):
         super(NoNodeError, self).__init__(self, msg)
 
 
-class FunctionVisitor(AsStringVisitor, ASTWalker):
-
-    def __init__(self):
-        ASTWalker.__init__(self, self)
-        self._visited = set()
-
-
-    def visit(self, node):
-        super(FunctionVisitor, self).visit(node)
-        print node
-
-
-
-# def autoyield(f):
-#     """Takes a return value from the decorated function and iterates
-#     over every item, yielding it."""
-#     def function_wrapper(*args, **kwargs):
-#         res = f(*args, **kwargs)
-#     return function_wrapper
-
-
-class LocalsVisitor(ASTWalker):
-    """visit a project by traversing the locals dictionary"""
+class IndexVisitor(ASTWalker):
 
     def __init__(self):
         ASTWalker.__init__(self, self)
@@ -113,7 +90,7 @@ class Indexer(object):
 
         The class, node_class, must derive from astroid.nodes.BaseNG."""
         assert issubclass(node_class, NodeNG)
-        visitor = LocalsVisitor()
+        visitor = IndexVisitor()
         visitor.visit(self.tree)
         nodes = visitor.nodes
         return nodes.get(node_class, [])
@@ -146,5 +123,7 @@ class Indexer(object):
         else:
             return matches
 
-    def find_function_by_name(self, expected_attr_value=None, comparator=None, node_list=None):
-        return self._compare_by_attr(Function, 'name', expected_attr_value, comparator, node_list)
+    def find_function_by_name(self, expected_attr_value=None,
+                              comparator=None, node_list=None):
+        return self._compare_by_attr(Function, 'name', expected_attr_value,
+                                     comparator, node_list)
