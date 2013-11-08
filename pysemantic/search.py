@@ -224,13 +224,24 @@ not exist on class {2!r}'.format(result, name, self))
             )
         return fmt
 
+def return_sane_filepath(filepath, root_dir='.'):
+    """Re-assembles a filepath so that it is relative to a particular
+    root directory."""
+    old_dir = os.curdir
+    try:
+        os.chdir(root_dir)
+        return os.path.relpath(filepath)
+    finally:
+        os.chdir(old_dir)
+
+
 class GrepOutputFormatter(OutputFormatterBase):
 
     GREP_OUTPUT_FORMAT = '{filename}:{lineno}:{result}'
 
     def print_single_result(self, result, formatted_result):
         output = self.GREP_OUTPUT_FORMAT.format(
-            filename=result.root().file,
+            filename=return_sane_filepath(result.root().file),
             lineno=result.lineno,
             result=formatted_result)
         self.output(output)

@@ -9,7 +9,7 @@ try:
 except ImportError:
     import unittest
 
-from pysemantic.search import SemanticSearcher, OutputFormatterBase, GrepOutputFormatter
+from pysemantic.search import SemanticSearcher, OutputFormatterBase, GrepOutputFormatter, return_sane_filepath
 from astroid.nodes import Function
 import astroid.nodes
 
@@ -171,10 +171,10 @@ class TestGrepOutputFormatter(unittest.TestCase):
         self.searcher.add_file(self.tmpfile.name)
         results = self.searcher.search('fn:name')
         expected = set([
-                "%s:6:def fn1(a='hello')" % self.tmpfile.name,
-                '%s:2:def fn2(arg1, arg2)' % self.tmpfile.name,
-                '%s:3:def fn3(*myargs, **mykwargs)' % self.tmpfile.name,
-                '%s:9:def fn4()' % self.tmpfile.name,
+                "%s:6:def fn1(a='hello')" % return_sane_filepath(self.tmpfile.name),
+                '%s:2:def fn2(arg1, arg2)' % return_sane_filepath(self.tmpfile.name),
+                '%s:3:def fn3(*myargs, **mykwargs)' % return_sane_filepath(self.tmpfile.name),
+                '%s:9:def fn4()' % return_sane_filepath(self.tmpfile.name),
                 ]
             )
         self.output.print_all_results(results)
