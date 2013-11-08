@@ -43,3 +43,4 @@ class AssertionParser(object):
     def iter_tree(self):
         for search_node in self._tree:
             yield search_node
+

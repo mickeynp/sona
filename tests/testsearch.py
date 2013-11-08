@@ -68,22 +68,14 @@ class SearchTest(unittest.TestCase):
         self.assertEqual(self.searcher.files, [self.tmpfile.name])
 
         nodes = set(self.searcher.search('fn:name == "fn1", fn:name == "fn2"'))
-        self.assert_(len(nodes) == 1)
-
-        node = nodes.pop()
-        self.assertIsInstance(node, Function)
-        self.assertEqual(node.name, 'fn1')
-
+        self.assert_(len(nodes) == 0)
 
     def test_find_function_by_name_invalid(self):
         self.searcher.add_file(self.tmpfile.name)
         self.assertEqual(self.searcher.files, [self.tmpfile.name])
 
-        # Should be 1 because the first assertion limits the search
-        # set to just functions named "fn1", and the second tries to
-        # find all the ones not named "fn1" -- which obviously fails.
         nodes = set(self.searcher.search('fn:name == "fn1", fn:name != "fn1"'))
-        self.assert_(len(nodes) == 1)
+        self.assert_(len(nodes) == 0)
 
     def test_multiple_expressions(self):
         self.searcher.add_file(self.tmpfile.name)

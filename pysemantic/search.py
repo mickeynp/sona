@@ -66,7 +66,7 @@ class SemanticSearcher(object):
     def _find_query_in_module(tree, query, indexer,
                               aggressive_search=False):
         matches = set()
-
+        global_matches = set()
         # Iterate over the tree. A tree is made up of many nested
         # lists with the following pattern:
         #
@@ -105,12 +105,18 @@ class SemanticSearcher(object):
                     try:
                         # This actually returns a list of nodes that matches the query.
                         nodes = indexer_fn(indexer, comp_value, comparator=comparator, node_list=nodes)
-                        log.debug('\t\tFound %d matching nodes', len(nodes))
+                        log.debug('\t\tFound %d new submatches (%d total)', len(nodes), len(matches))
+                        # Override the old list with the new one. We
+                        # don't want stale, and now invalid (as they
+                        # failed the indexer check above), to remain.
+                        # TODO: or do we? Add switch to support this.
+                        matches = set(nodes)
                     except NoNodeError:
                         # It's perfectly OK if NoNodeError is raised
                         # -- all that means is one leg of the query
                         # failed to match.
                         nodes = None
+                        matches = set()
 
                         log.debug('\t\tFound 0 matching nodes')
                         # Break if aggressive_search is not True.
@@ -123,7 +129,13 @@ class SemanticSearcher(object):
  locator assigned to it.'.format(assertion))
                 except NoNodeError:
                     raise
-        return matches
+            # Once we're done with one expression we need to shunt all
+            # the nodes in the matches set into the set
+            # global_matches. The filtering applied by assertions do
+            # not cross "expressions".
+            global_matches.update(matches)
+            matches = set()
+        return global_matches
 
     @staticmethod
     def _do_search(filename, query):
