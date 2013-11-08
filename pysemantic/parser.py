@@ -9,7 +9,7 @@ from pyparsing import *
 log = logging.getLogger(__name__)
 
 
-class SearchTerm(object):
+class SearchAssertion(object):
 
     # Complete dictionary of valid conditionals we support, and the lambda
     # we map them to. The lambda must take two arguments and return a bool
@@ -65,9 +65,9 @@ class AssertionParser(object):
     Field = Word(IDENTIFIER) + Suppress(Literal(':')) + Word(IDENTIFIER)
     Conditional = (Keyword("==") | Keyword("!="))
 
-    Term = Field + Conditional + String
+    Assertion = Field + Conditional + String
 
-    Expression = Group(Term | Field) + ZeroOrMore(Suppress(",") + Group(Term | Field))
+    Expression = Group(Assertion | Field) + ZeroOrMore(Suppress(",") + Group(Assertion | Field))
 
     Query = Group(Expression) + Group(ZeroOrMore(Suppress(";") + Expression))
 

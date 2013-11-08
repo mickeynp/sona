@@ -23,7 +23,7 @@ class SemanticSearcherError(Exception):
     pass
 class NoSemanticIndexerError(SemanticSearcherError):
     pass
-class InvalidTermError(SemanticSearcherError):
+class InvalidAssertionError(SemanticSearcherError):
     pass
 
 
@@ -63,28 +63,28 @@ class SemanticSearcher(object):
         # Iterate over the tree. A tree is made up of many nested
         # lists with the following pattern:
         #
-        # [[[term], ...],
-        #  [[term, ...], ...], ...]
+        # [[[assertion], ...],
+        #  [[assertion, ...], ...], ...]
         for expression in ap.iter_tree():
             nodes = None
-            # Each expression, in turn, has N number of terms, which
+            # Each expression, in turn, has N number of assertions, which
             # in turn is made up of a field node type; a field
             # attribute; a conditional; and a value.
-            for term in expression:
-                if not len(term) in [2, 4]:
-                    raise InvalidTermError('Term {0!r} contained {1} items instead of\
- the expected 2 or 4'.format(term, len(term)))
+            for assertion in expression:
+                if not len(assertion) in [2, 4]:
+                    raise InvalidAssertionError('Assertion {0!r} contained {1} items instead of\
+ the expected 2 or 4'.format(assertion, len(assertion)))
                 try:
-                    if len(term) == 2:
-                        node_type, node_attr = term
-                        # Blank these out if term only has two
+                    if len(assertion) == 2:
+                        node_type, node_attr = assertion
+                        # Blank these out if assertion only has two
                         # elements. That means it's of the form
                         # "type:attr" which is shorthand for "match
                         # everything".
                         conditional = None
                         comp_value = None
                     else:
-                        node_type, node_attr, conditional, comp_value = term
+                        node_type, node_attr, conditional, comp_value = assertion
 
                     comparator = COMPARATOR_MAP[conditional]
                     indexer_fn = INDEXER_MAPS[(node_type, node_attr)]
