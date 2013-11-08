@@ -5,53 +5,61 @@
 Introduction
 ============
 
-PySemantic is a language-aware search tool for Python. Instead of searching for string patterns you search for semantic or syntactic constructs using series of assertions about what you want your results to be.
+PySemantic is a language-aware search tool for Python. Instead of searching for string patterns you search for semantic or syntactic constructs using series of assertions about what you want to find.
 
-PySemantic uses a concept called Assertion-Based Search. By mixing assertions with conditions you can tell PySemantic not only *what* you want (be it functions, classes, variable assignments, and so on) but *which* ones you want. A naïve boolean query language is not sufficient to capture both dimensions.
+PySemantic uses a concept called Assertion-Based Search. By mixing assertions with simple conditions (like ``==`` and ``!=``) you can tell PySemantic not only *what* you want (be it functions, classes, variable assignments, and so on) but *which* ones you want. A naïve Boolean query language is not sufficient to capture both dimensions.
 
-As great as ``grep`` is, it's a line-based pattern tool; it knows nothing about Python and does little to help you find the things you really care about - like functions named a certain way or with a certain number of arguments. PySemantic uses static analysis to parse your source code -- no actual code is ever executed. As such -- and this is particularly true where there is heavy use of Python's dynamic nature -- PySemantic may not uncover things it cannot compute by simpy analyzing the code statically.
+As great as ``grep`` is, it's a line-based pattern tool; it knows nothing about what it searches and makes no effort to distinguish between comments, strings and code. PySemantic uses static analysis to parse your source code -- no actual code is ever executed -- and can therefore uncover things based on the *structure* of your code: want a list of all functions declared in your source files? No problem.
 
 Why You Should Use PySemantic
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Python-aware search. Search by function/class name definitions; imports in a module; function calls and more!
+* Python-aware search. Search by function/class name definitions, imports in a module, function calls, and more;
 * PySemantic understands git and will search for files that exist only in git;
 * Simple, expressive and powerful assertion-based language with Python regular expression support;
 * Comes with built-in support for Emacs;
-* PySemantic uses multiprocessing to speed up parsing.
+* PySemantic uses multiprocessing to speed up parsing;
+* PySemantic understands code with syntax errors in it, and will try to parse it anyway;
+* User-friendly command line interface aimed at developers;
 
 Simple Assertion Examples
 -------------------------
-Let's say you want a complete list of all ``function definitions`` found by PySemantic. The assertion for that would simply be
+Here's a few sample queries to whet your appetite. Let's start with one of the most fundamental *assertions* you can declare.
 
 ::
 
    fn:name
 
-and that's it. If you want to filter by ``function definitions`` named "hello", the assertion would instead be
+This simply tells PySemantic you want all function *declarations* from all the files you tell it to search.
+
+If you want to narrow down the scope of function declarations to just the ones matching a certain string, you could make the following assertion
 
 ::
 
-   fn:name == "hello"
+   fn:name == "download_file"
 
-Let's say you want a list of all ``function name definitions`` ``and`` ``class name definitions`` you would make the following assertions
+If you want more than just one set of function declarations returned, you must add a new *expression* -- this is trivially done by separating your assertion with ``;``, like so:
+
+::
+
+   fn:name == "download_file"; fn:name == "upload_file"
+
+Of course, there's nothing stopping you from gathering a list of function *and* class definitions in the same result set:
 
 ::
 
    fn:name; cls:name
 
-As you can see, the syntax is similar to the first example, but in order to express more than one assertion at a time, you must delimit each assertion with a semicolon ``;``. Each assertion makes one claim -- to either return a list of everything that has a field, such as ``fn:name``, or a subset of that very list, such as ``fn:name == "hello"``.
-
-But what if you want a list of all ``class name definitions`` but only a subset of all ``function name definitions`` that are named ``upload_file`` and ``download_file`` -- well, it's easy:
+What if you're looking for all ``__init__`` constructors, but only want ones that have 3 arguments?
 
 ::
 
-   cls:name; fn:name == "upload_file", fn:name == "download_file"
+   fn:name == "__init__", cls:argcount == 3
 
-or just,
+Observe that instead of splitting our two assertions into two expressions, delimited by ``;``, we used a ``,`` instead -- and the reason for that is simple: commas filter on the existing result set, and semicolons retrieve a new one. So the following query
 
 ::
 
-   cls:name; fn:name == r"(upload|download)_file"
+   fn:name == "__init__"; fn:argcount == 3
 
-using a regular expression.
+would give you all function definitions with ``name`` equal to ``__init__`` **and** the set of functions with an ``argcount`` of ``3``.
