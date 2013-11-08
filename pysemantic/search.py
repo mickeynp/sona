@@ -10,12 +10,8 @@ from pysemantic.parser import AssertionParser
 from pysemantic.indexer import Indexer, NoNodeError
 
 from astroid import builder, InferenceError, NotFoundError
-from astroid.nodes import Module, Function
-from astroid.bases import YES, BUILTINS, NodeNG
-from astroid.manager import AstroidManager
-from astroid.utils import ASTWalker
-from astroid.as_string import AsStringVisitor
-from collections import defaultdict
+from astroid.nodes import Module, Function, Lambda, Class
+from astroid.bases import NodeNG
 
 log = logging.getLogger(__name__)
 
@@ -116,6 +112,7 @@ class SemanticSearcher(object):
                         # failed to match.
                         nodes = None
 
+                        log.debug('\t\tFound 0 matching nodes')
                         # Break if aggressive_search is not True.
                         if not aggressive_search:
                             break
@@ -144,15 +141,15 @@ class SemanticSearcher(object):
             yield node
 
     def search(self, query):
-        def store_results(r):
-            self.results.append(r)
-
         jobs = [gevent.spawn(SemanticSearcher._do_search, filename, query)
                 for filename in self.files]
         gevent.joinall(jobs)
         for job in jobs:
-            # There may be many nodes returned from each job.
-            for node in job.value:
+            # There may be many nodes returned from each job, so we
+            # need to iterate over them and, sigh, yield them again...
+            # Also, this is as good a time as any to sort the items by
+            # line number.
+            for node in sorted(job.value, key=lambda n: n.lineno):
                 yield node
 
 
@@ -223,6 +220,17 @@ not exist on class {2!r}'.format(result, name, self))
             node.args.format_args() or ''
             )
         return fmt
+
+    def _format_Class(self, node):
+        """Formats a Class node to make it look like it would in
+        Python."""
+        assert isinstance(node, Class)
+        fmt = 'class {0}({1})'.format(
+            node.name,
+            ', '.join(node.basenames),
+            )
+        return fmt
+
 
 def return_sane_filepath(filepath, root_dir='.'):
     """Re-assembles a filepath so that it is relative to a particular

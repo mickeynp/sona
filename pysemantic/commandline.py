@@ -7,15 +7,17 @@ import argparse
 import astroid
 import fnmatch
 from pysemantic.search import SemanticSearcher, GrepOutputFormatter
+from pyparsing import ParseException
 
-log = logging.getLogger(__name__)
-logging.basicConfig()
-log.setLevel(logging.DEBUG)
+log = logging.getLogger('pysemantic')
+
 def create_argparser():
     parser = argparse.ArgumentParser(description='PySemantic Query System',
                                      prog='pysemantic')
     parser.add_argument('search', nargs='+', help='search for something', metavar=('search'))
     parser.add_argument('--no-git', action='store_true', help='do not use git to find files')
+    parser.add_argument('--log-level', choices=['debug', 'info', 'warning', 'error', 'critical', 'none'],
+                        help='show only logs from this level and above', default='critical')
     parser.add_argument('-f', '--file')
     parser.add_argument('-o', '--output-format', choices=['emacs', 'json', 'grep'], default='grep',
                         help="output format for the results")
@@ -27,6 +29,16 @@ FORMATTER_MAP = {
     'emacs': None,
     'json': None,
     }
+
+LOG_LEVELS = {
+    'debug': logging.DEBUG,
+    'info': logging.INFO,
+    'warning': logging.WARN,
+    'error': logging.ERROR,
+    'critical': logging.CRITICAL,
+    'none': logging.NOTSET,
+    }
+
 class PySemantic(object):
     """User-Interface Class for the commandline
 
@@ -43,16 +55,24 @@ class PySemantic(object):
     def go(self):
         """Figures out from the given CLI args what it needs to
         do."""
+        logging.basicConfig(level=LOG_LEVELS[self.args.log_level],
+                            format='%(levelname)s - %(message)s')
+        log.debug('Starting up')
         if self.args.search:
             _, query = self.args.search
-            self.make_search_query(query)
+            try:
+                self.make_search_query(query)
+            except ParseException, err:
+                log.critical('ERROR: Parsing failed because...')
+                log.critical(err.line)
+                log.critical(" "*(err.column-1) + "^")
+                log.critical(str(err))
 
     def __init__(self, args):
         self.args = args
         self.formatter = FORMATTER_MAP[args.output_format]()
 
 def main():
-    log.debug('Starting up')
     parser = create_argparser()
     args = parser.parse_args()
     pyse = PySemantic(args)
