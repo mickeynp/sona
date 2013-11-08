@@ -27,11 +27,13 @@ class AssertionParserTest(unittest.TestCase):
         ap = AssertionParser()
         pt = ap.String.parseString('"Test String"')
         self.assertEqual(pt.pop(), 'Test String')
+        pt = ap.String.parseString("'Test String'")
+        self.assertEqual(pt.pop(), 'Test String')
 
     def test_string_error(self):
         ap = AssertionParser()
         with self.assertRaises(pyparsing.ParseException):
-            ap.String.parseString("'Test String'")
+            ap.String.parseString("'Test String\"")
 
     def test_field(self):
         ap = AssertionParser()

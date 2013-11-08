@@ -60,7 +60,7 @@ class AssertionParser(object):
     IDENTIFIER = alphanums + "_"
 
     BoolConstant = Keyword("True") | Keyword("False")
-    String = QuotedString('"')
+    String = QuotedString('"') | QuotedString("'")
 
     Field = Word(IDENTIFIER) + Suppress(Literal(':')) + Word(IDENTIFIER)
     Conditional = (Keyword("==") | Keyword("!="))
