@@ -115,7 +115,12 @@ class Indexer(object):
 
         node_list is an optional list of nodes to scan *instead* of
         the default parse tree. Note: node_list is expected to be a
-        flat list and not a parse tree."""
+        flat list and not a parse tree.
+
+        closed_fn is an optional callable that is call and closed over
+        the variables node and comparator. Its result is used to
+        determine whether a node should be included in the matches
+        list. """
         assert attr is not None or closed_fn is not None, \
             'Either closed_fn or attr must be non-None'
         # If we are given an explicit list of nodes to search, use
