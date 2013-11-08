@@ -33,6 +33,10 @@ class AssertionParser(object):
         if query:
             self._tree = self.Query.parseString(query, parseAll=True)
 
+    @property
+    def tree(self):
+        return self._tree
+
     def iter_tree(self):
         for search_node in self._tree:
             yield search_node

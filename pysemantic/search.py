@@ -4,6 +4,8 @@
 import logging
 import os
 
+#from multiprocessing import Queue, Pool
+import gevent
 from pysemantic.parser import AssertionParser
 from pysemantic.indexer import Indexer, NoNodeError
 
@@ -55,14 +57,18 @@ class SemanticSearcher(object):
     aggressive_search = False
 
 
-    def add_file(self, filepath):
+    def add_file(self, filepath, pool_workers=5):
         self.files.append(filepath)
+        self.pool_workers = pool_workers
 
     def __init__(self):
         self.files = []
+        self.results = []
         self.aggressive_search = False
 
-    def _find_query_in_module(self, parser, query, indexer):
+    @staticmethod
+    def _find_query_in_module(tree, query, indexer,
+                              aggressive_search=False):
         matches = set()
 
         # Iterate over the tree. A tree is made up of many nested
@@ -70,7 +76,7 @@ class SemanticSearcher(object):
         #
         # [[[assertion], ...],
         #  [[assertion, ...], ...], ...]
-        for expression in parser.iter_tree():
+        for expression in tree:
             nodes = None
             # Each expression, in turn, has N number of assertions,
             # which in turn is made up of at least a field node type
@@ -108,7 +114,7 @@ class SemanticSearcher(object):
                         nodes = None
 
                         # Break if aggressive_search is not True.
-                        if not self.aggressive_search:
+                        if not aggressive_search:
                             break
                     for node in nodes:
                         matches.add(node)
@@ -119,12 +125,40 @@ class SemanticSearcher(object):
                     raise
         return matches
 
+    @staticmethod
+    def _do_search(filename, query):
+        """Actual method that does the search.
+
+        This method is designed to operate on a single file ONLY for
+        the purposes of enabling paralleism with multiprocessing."""
+        log.info('hello')
+        tree = AssertionParser(query).tree
+        log.info('Filename is %s', filename)
+        indexer = Indexer(filename)
+        all_nodes = SemanticSearcher._find_query_in_module(tree,
+                                                           query,
+                                                           indexer)
+        for node in all_nodes:
+            yield node
+
     def search(self, query):
+        def store_results(r):
+            self.results.append(r)
+
+        log.info('hi')
         parser = AssertionParser(query)
-        for filename in self.files:
-            indexer = Indexer(filename)
-            for nodelist in self._find_query_in_module(parser, query, indexer):
-                yield nodelist
+        # pool = Pool(1# self.pool_workers
+        #             )
+        # pool.apply_async(SemanticSearcher._do_search,
+        #                  args=(self.files, query),
+        #                  # callback=store_results
+        #                  )
+        jobs = [gevent.spawn(SemanticSearcher._do_search, filename, query)
+                for filename in self.files]
+        gevent.joinall(jobs)
+        for job in jobs:
+            for node in job.value:
+                yield node
 
 
 

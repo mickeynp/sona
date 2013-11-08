@@ -9,7 +9,8 @@ import fnmatch
 from pysemantic.search import SemanticSearcher, GrepOutputFormatter
 
 log = logging.getLogger(__name__)
-
+logging.basicConfig()
+log.setLevel(logging.DEBUG)
 def create_argparser():
     parser = argparse.ArgumentParser(description='PySemantic Query System',
                                      prog='pysemantic')
@@ -51,6 +52,7 @@ class PySemantic(object):
         self.formatter = FORMATTER_MAP[args.output_format]()
 
 def main():
+    log.debug('Starting up')
     parser = create_argparser()
     args = parser.parse_args()
     pyse = PySemantic(args)
