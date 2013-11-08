@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 #  -*- coding: utf-8 -*-
 
+import os
 import logging
 import argparse
 import astroid
-from pysemantic.search import SemanticSearcher
+import fnmatch
+from pysemantic.search import SemanticSearcher, GrepOutputFormatter
 
 log = logging.getLogger(__name__)
 
@@ -19,12 +21,40 @@ def create_argparser():
     return parser
 
 
-def make_search_query(query):
-    ss = SemanticSearcher()
-    ss.search(query)
+FORMATTER_MAP = {
+    'grep': GrepOutputFormatter,
+    'emacs': None,
+    'json': None,
+    }
+class PySemantic(object):
+    """User-Interface Class for the commandline
+
+    This class interfaces with the user through the commandline and
+    with the backend that does the searching, parsing and indexing."""
+
+    def make_search_query(self, query):
+        ss = SemanticSearcher()
+        for fn in fnmatch.filter(os.listdir('.'), '*.py'):
+            ss.add_file(fn)
+        results = ss.search(query)
+        self.formatter.print_all_results(results)
+
+    def go(self):
+        """Figures out from the given CLI args what it needs to
+        do."""
+        if self.args.search:
+            _, query = self.args.search
+            self.make_search_query(query)
+
+    def __init__(self, args):
+        self.args = args
+        self.formatter = FORMATTER_MAP[args.output_format]()
+
 def main():
     parser = create_argparser()
     args = parser.parse_args()
-    args.search
+    pyse = PySemantic(args)
+    pyse.go()
+
 if __name__ == "__main__":
     main()

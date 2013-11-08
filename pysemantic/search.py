@@ -20,14 +20,12 @@ log = logging.getLogger(__name__)
 
 class PySemanticError(Exception):
     pass
-
 class SemanticSearcherError(PySemanticError):
     pass
 class NoSemanticIndexerError(SemanticSearcherError):
     pass
 class InvalidAssertionError(SemanticSearcherError):
     pass
-
 class FormatterError(PySemanticError):
     pass
 
@@ -64,8 +62,7 @@ class SemanticSearcher(object):
         self.files = []
         self.aggressive_search = False
 
-    def _find_query_in_module(self, query, indexer):
-        ap = AssertionParser(query)
+    def _find_query_in_module(self, parser, query, indexer):
         matches = set()
 
         # Iterate over the tree. A tree is made up of many nested
@@ -73,7 +70,7 @@ class SemanticSearcher(object):
         #
         # [[[assertion], ...],
         #  [[assertion, ...], ...], ...]
-        for expression in ap.iter_tree():
+        for expression in parser.iter_tree():
             nodes = None
             # Each expression, in turn, has N number of assertions,
             # which in turn is made up of at least a field node type
@@ -116,15 +113,17 @@ class SemanticSearcher(object):
                     for node in nodes:
                         matches.add(node)
                 except KeyError:
-                    raise NoSemanticIndexerError('{0!r} does not have a valid locator assigned to it.'.format(assertion))
+                    raise NoSemanticIndexerError('{0!r} does not have a valid\
+ locator assigned to it.'.format(assertion))
                 except NoNodeError:
                     raise
         return matches
 
     def search(self, query):
+        parser = AssertionParser(query)
         for filename in self.files:
             indexer = Indexer(filename)
-            for nodelist in self._find_query_in_module(query, indexer):
+            for nodelist in self._find_query_in_module(parser, query, indexer):
                 yield nodelist
 
 
@@ -139,8 +138,16 @@ class OutputFormatterBase(object):
     result."""
 
 
-    def __init__(self, results=None):
+    def __init__(self, results=None, **settings):
+        """Creates an Output Formatter class.
+
+        The optional argument, results, is a list of result sets the
+        formatter should do its work on.
+
+        The **settings argument is a kv-pair of optional settings you
+        wish to store against the formatter object."""
         self.results = results
+        self.settings = settings
 
     def output(self, text):
         """Outputs text to a device or object.
