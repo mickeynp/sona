@@ -4,3 +4,4 @@ astroid
 unittest2
 argparse
 gevent
+rednose
