@@ -18,20 +18,28 @@ from collections import defaultdict
 log = logging.getLogger(__name__)
 
 
+class PySemanticError(Exception):
+    pass
 
-class SemanticSearcherError(Exception):
+class SemanticSearcherError(PySemanticError):
     pass
 class NoSemanticIndexerError(SemanticSearcherError):
     pass
 class InvalidAssertionError(SemanticSearcherError):
     pass
 
+class FormatterError(PySemanticError):
+    pass
+
+
 
 INDEXER_MAPS = {
     # <Node type>, <Equiv Attr on Node Class>
     ('fn', 'name'): Indexer.find_function_by_name,
+    ('cls', 'name'): Indexer.find_class_by_name,
 
     }
+
 # TODO: This should be in parser.py?
 COMPARATOR_MAP = {
     '==': lambda a,b: a == b,
@@ -93,11 +101,9 @@ class SemanticSearcher(object):
                         comparator = None
 
                     indexer_fn = INDEXER_MAPS[(node_type, node_attr)]
-
                     try:
                         # This actually returns a list of nodes that matches the query.
                         nodes = indexer_fn(indexer, comp_value, comparator=comparator, node_list=nodes)
-
                     except NoNodeError:
                         # It's perfectly OK if NoNodeError is raised
                         # -- all that means is one leg of the query
@@ -107,10 +113,8 @@ class SemanticSearcher(object):
                         # Break if aggressive_search is not True.
                         if not self.aggressive_search:
                             break
-
                     for node in nodes:
                         matches.add(node)
-
                 except KeyError:
                     raise NoSemanticIndexerError('{0!r} does not have a valid locator assigned to it.'.format(assertion))
                 except NoNodeError:
@@ -119,7 +123,78 @@ class SemanticSearcher(object):
 
     def search(self, query):
         for filename in self.files:
-            indexer = Indexer.from_file(filename)
+            indexer = Indexer(filename)
             for nodelist in self._find_query_in_module(query, indexer):
                 yield nodelist
 
+
+
+
+class OutputFormatterBase(object):
+    """Base Class for formatting a SemanticSearcher's results for
+    display on the screen.
+
+    This class contains formatters for each supported node class,
+    along with helper methods to iterate over, and display, each node
+    result."""
+
+
+    def __init__(self, results=None):
+        self.results = results
+
+    def output(self, text):
+        """Outputs text to a device or object.
+
+        By default it is stdout (via print)"""
+        print text
+
+    def print_single_result(self, result, formatted_result):
+        """Abstract method. Called for every result by
+        print_all_results with the original result object and
+        formatted_result, a string-formatted version of the result."""
+        raise NotImplementedError
+
+    def print_all_results(self, results=None):
+        """Enumerates each result in results and calls
+        print_single_result for each one of them, passing in the
+        original result along with a string-formatted version of the
+        result."""
+        results = results or self.results
+        for result in results:
+            self.print_single_result(result, self.format_single_result(result))
+
+    def format_single_result(self, result):
+        """Dispatcher method that formats result based on its node type.
+
+        This is done by, in turn, calling another method named
+        _format_<Node Class> with the result."""
+        # Use dispatching to get the method name of the formatter
+        try:
+            name = '_format_{0}'.format(result.__class__.__name__)
+            formatter = getattr(self, name)
+            assert callable(formatter)
+            return formatter(result)
+        except AttributeError:
+            raise FormatterError('Cannot format {0!r}. Method {1} does \
+not exist on class {2!r}'.format(result, name, self))
+
+    def _format_Function(self, node):
+        """Formats a Function node to make it look like it would in
+        Python."""
+        assert isinstance(node, Function)
+        fmt = 'def {0}({1})'.format(
+            node.name,
+            node.args.format_args() or ''
+            )
+        return fmt
+
+class GrepOutputFormatter(OutputFormatterBase):
+
+    GREP_OUTPUT_FORMAT = '{filename}:{lineno}:{result}'
+
+    def print_single_result(self, result, formatted_result):
+        output = self.GREP_OUTPUT_FORMAT.format(
+            filename=result.root().file,
+            lineno=result.lineno,
+            result=formatted_result)
+        self.output(output)

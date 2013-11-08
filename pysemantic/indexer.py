@@ -4,7 +4,7 @@
 import logging
 import os
 from astroid import builder, InferenceError, NotFoundError
-from astroid.nodes import Module, Function
+from astroid.nodes import Module, Function, Class
 from astroid.bases import YES, BUILTINS, NodeNG
 from astroid.manager import AstroidManager
 from astroid.utils import ASTWalker
@@ -73,17 +73,17 @@ class Indexer(object):
         """Case-sensitive comparison"""
         return a == b
 
-    def __init__(self, s):
+    def __init__(self, filename):
         """Builds an Indexer given s, a string object."""
-        self._module_string = s
-        tree = builder.AstroidBuilder().string_build(s)
+        self._filename = filename
+        tree = builder.AstroidBuilder().file_build(filename)
         self.tree = tree
 
-    @classmethod
-    def from_file(cls, filename):
-        """Builds an Indexer given f, a file-like object."""
-        with open(filename) as f:
-            return cls(f.read())
+    # @classmethod
+    # def from_file(cls, filename):
+    #     """Builds an Indexer given f, a file-like object."""
+    #     with open(filename) as f:
+    #         return cls(f.read())
 
     def find(self, node_class):
         """Searches a Visitor's nodemap for a particular class.
@@ -143,4 +143,9 @@ class Indexer(object):
     def find_function_by_name(self, expected_attr_value=None,
                               comparator=None, node_list=None):
         return self._compare_by_attr(Function, 'name', expected_attr_value,
+                                     comparator, node_list)
+
+    def find_class_by_name(self, expected_attr_value=None,
+                              comparator=None, node_list=None):
+        return self._compare_by_attr(Class, 'name', expected_attr_value,
                                      comparator, node_list)

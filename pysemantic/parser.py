@@ -2,7 +2,6 @@
 #  -*- coding: utf-8 -*-
 
 import logging
-from astroid.nodes import Function, Class
 # Terrible...
 from pyparsing import *
 

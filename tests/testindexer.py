@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #  -*- coding: utf-8 -*-
 
+import tempfile
 import logging
 from StringIO import StringIO
 try:
@@ -26,8 +27,13 @@ def fn2():
 class IndexerTest(unittest.TestCase):
 
     def setUp(self):
-        self.index = Indexer(FUNCTIONS_STR)
+        self.tmpfile = tempfile.NamedTemporaryFile()
+        self.tmpfile.write(FUNCTIONS_STR)
+        self.tmpfile.flush()
+        self.index = Indexer(self.tmpfile.name)
 
+    def tearDown(self):
+        self.tmpfile = None
     def test_function_visitor(self):
         fns = set([fns.name for fns in self.index.find(astroid.nodes.Function)])
         self.assertEqual(fns, set(['fn1', 'fn2', 'fn3']))
