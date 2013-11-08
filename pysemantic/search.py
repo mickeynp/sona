@@ -115,6 +115,6 @@ class SemanticSearcher(object):
     def search(self, query):
         for filename in self.files:
             indexer = Indexer.from_file(filename)
-            for node in self._find_query_in_module(query, indexer):
-                yield node
+            for nodelist in self._find_query_in_module(query, indexer):
+                yield nodelist
 
