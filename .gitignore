@@ -4,4 +4,4 @@
 .#*
 /README.html
 .noseids
-/tests/.coverage
+.coverage
