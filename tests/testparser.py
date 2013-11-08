@@ -58,23 +58,23 @@ class AssertionParserTest(unittest.TestCase):
         pt = ap.Conditional.parseString("!=")
         self.assertEqual(pt.pop(), '!=')
 
-    def test_term(self):
+    def test_assertion(self):
         ap = AssertionParser()
-        pt = ap.Term.parseString('fn:name == "hello"').asList()
+        pt = ap.Assertion.parseString('fn:name == "hello"').asList()
 
         self.assertEqual(pt.pop(0), 'fn')
         self.assertEqual(pt.pop(0), 'name')
         self.assertEqual(pt.pop(0), '==')
         self.assertEqual(pt.pop(0), 'hello')
 
-    def test_term_error(self):
+    def test_assertion_error(self):
         ap = AssertionParser()
         with self.assertRaises(pyparsing.ParseException):
-            pt = ap.Term.parseString('fn:name <> "hello"')
+            pt = ap.Assertion.parseString('fn:name <> "hello"')
         with self.assertRaises(pyparsing.ParseException):
-            pt = ap.Term.parseString('fn:name ==')
+            pt = ap.Assertion.parseString('fn:name ==')
         with self.assertRaises(pyparsing.ParseException):
-            pt = ap.Term.parseString('fn: ==')
+            pt = ap.Assertion.parseString('fn: ==')
 
     def test_expr(self):
         ap = AssertionParser()
@@ -84,7 +84,7 @@ class AssertionParserTest(unittest.TestCase):
         self.assertEqual(assertion1, ['fn', 'name', '==', 'foo'])
         self.assertEqual(assertion2, ['cls', 'name', '==', 'bar'])
         with self.assertRaises(pyparsing.ParseException):
-            pt = ap.Term.parseString('fn:name == , cls:name')
+            pt = ap.Assertion.parseString('fn:name == , cls:name')
 
         pt = ap.Expression.parseString('fn:name, cls:name')
         self.assertEqual(pt.asList(), [['fn', 'name'], ['cls', 'name']])

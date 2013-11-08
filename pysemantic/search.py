@@ -58,7 +58,7 @@ class SemanticSearcher(object):
 
     def _find_query_in_module(self, query, indexer):
         ap = AssertionParser(query)
-        matches = []
+        matches = set()
 
         # Iterate over the tree. A tree is made up of many nested
         # lists with the following pattern:
@@ -67,9 +67,10 @@ class SemanticSearcher(object):
         #  [[assertion, ...], ...], ...]
         for expression in ap.iter_tree():
             nodes = None
-            # Each expression, in turn, has N number of assertions, which
-            # in turn is made up of a field node type; a field
-            # attribute; a conditional; and a value.
+            # Each expression, in turn, has N number of assertions,
+            # which in turn is made up of at least a field node type
+            # and a field attribute. Optionally, a conditional and a
+            # value may also be there.
             for assertion in expression:
                 if not len(assertion) in [2, 4]:
                     raise InvalidAssertionError('Assertion {0!r} contained {1} items instead of\
@@ -86,7 +87,11 @@ class SemanticSearcher(object):
                     else:
                         node_type, node_attr, conditional, comp_value = assertion
 
-                    comparator = COMPARATOR_MAP[conditional]
+                    try:
+                        comparator = COMPARATOR_MAP[conditional]
+                    except KeyError:
+                        comparator = None
+
                     indexer_fn = INDEXER_MAPS[(node_type, node_attr)]
 
                     try:
@@ -104,10 +109,10 @@ class SemanticSearcher(object):
                             break
 
                     for node in nodes:
-                        matches.append(node)
+                        matches.add(node)
 
                 except KeyError:
-                    raise NoSemanticIndexerError('{0!r} does not have a valid locator assigned to it.'.format(node))
+                    raise NoSemanticIndexerError('{0!r} does not have a valid locator assigned to it.'.format(assertion))
                 except NoNodeError:
                     raise
         return matches
