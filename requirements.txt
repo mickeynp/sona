@@ -2,3 +2,5 @@ pyparsing
 nose
 astroid
 unittest2
+argparse
+gevent
