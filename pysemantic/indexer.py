@@ -99,6 +99,23 @@ class Indexer(object):
     # Specific locators for various node classes.
     def _compare_by_attr(self, class_type, attr, expected_attr_value=None,
                          comparator=None, node_list=None):
+        """Handy generic method for querying the parse tree.
+
+        class_type must be a valid Astroid node class
+
+        attr is the string attribute (via getattr()) that you want to
+        use for the comparison
+
+        expected_attr_value is the expected attribute value. If it's
+        None, it means \"always match\".
+
+        comparator is the comparison function to use to compare the
+        attribute value on each node against expected_attr_value. If
+        it is None, use the default == comparison.
+
+        node_list is an optional list of nodes to scan *instead* of
+        the default parse tree. Note: node_list is expected to be a
+        flat list and not a parse tree."""
         # If we are given an explicit list of nodes to search, use
         # that instead; otherwise, go find all the nodes matching
         # class_type.
