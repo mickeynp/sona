@@ -77,12 +77,14 @@ class SemanticSearcher(object):
         # [[[assertion], ...],
         #  [[assertion, ...], ...], ...]
         for expression in tree:
+            log.debug('Parsing expression %r', expression)
             nodes = None
             # Each expression, in turn, has N number of assertions,
             # which in turn is made up of at least a field node type
             # and a field attribute. Optionally, a conditional and a
             # value may also be there.
             for assertion in expression:
+                log.debug('\tParsing assertion %r', assertion)
                 if not len(assertion) in [2, 4]:
                     raise InvalidAssertionError('Assertion {0!r} contained {1} items instead of\
  the expected 2 or 4'.format(assertion, len(assertion)))
@@ -107,6 +109,7 @@ class SemanticSearcher(object):
                     try:
                         # This actually returns a list of nodes that matches the query.
                         nodes = indexer_fn(indexer, comp_value, comparator=comparator, node_list=nodes)
+                        log.debug('\t\tFound %d matching nodes', len(nodes))
                     except NoNodeError:
                         # It's perfectly OK if NoNodeError is raised
                         # -- all that means is one leg of the query
@@ -131,9 +134,8 @@ class SemanticSearcher(object):
 
         This method is designed to operate on a single file ONLY for
         the purposes of enabling paralleism with multiprocessing."""
-        log.info('hello')
         tree = AssertionParser(query).tree
-        log.info('Filename is %s', filename)
+        log.info('Commencing with parsing of file %s', filename)
         indexer = Indexer(filename)
         all_nodes = SemanticSearcher._find_query_in_module(tree,
                                                            query,
@@ -145,18 +147,11 @@ class SemanticSearcher(object):
         def store_results(r):
             self.results.append(r)
 
-        log.info('hi')
-        parser = AssertionParser(query)
-        # pool = Pool(1# self.pool_workers
-        #             )
-        # pool.apply_async(SemanticSearcher._do_search,
-        #                  args=(self.files, query),
-        #                  # callback=store_results
-        #                  )
         jobs = [gevent.spawn(SemanticSearcher._do_search, filename, query)
                 for filename in self.files]
         gevent.joinall(jobs)
         for job in jobs:
+            # There may be many nodes returned from each job.
             for node in job.value:
                 yield node
 
