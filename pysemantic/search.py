@@ -32,8 +32,8 @@ class FormatterError(PySemanticError):
 INDEXER_MAPS = {
     # <Node type>, <Equiv Attr on Node Class>
     ('fn', 'name'): Indexer.find_function_by_name,
+    ('fn', 'argcount'): Indexer.find_function_by_argcount,
     ('cls', 'name'): Indexer.find_class_by_name,
-
     }
 
 # TODO: This should be in parser.py?

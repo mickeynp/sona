@@ -17,11 +17,14 @@ class AssertionParser(object):
 
     BoolConstant = Keyword("True") | Keyword("False")
     String = QuotedString('"') | QuotedString("'")
+    Number = Word(nums).setParseAction(lambda s, l, t: [int(t[0])])
+    Identifier = Word(IDENTIFIER)
 
-    Field = Word(IDENTIFIER) + Suppress(Literal(':')) + Word(IDENTIFIER)
+    Field = Identifier + Suppress(Literal(':')) + Identifier
+
     Conditional = (Keyword("==") | Keyword("!="))
 
-    Assertion = Field + Conditional + String
+    Assertion = Field + Conditional + (String | Number)
 
     Expression = Group(Assertion | Field) + ZeroOrMore(Suppress(",") + Group(Assertion | Field))
 
@@ -40,4 +43,3 @@ class AssertionParser(object):
     def iter_tree(self):
         for search_node in self._tree:
             yield search_node
-

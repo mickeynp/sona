@@ -97,8 +97,8 @@ class Indexer(object):
 
 
     # Specific locators for various node classes.
-    def _compare_by_attr(self, class_type, attr, expected_attr_value=None,
-                         comparator=None, node_list=None):
+    def _compare_by_attr(self, class_type, attr=None, expected_attr_value=None,
+                         comparator=None, node_list=None, closed_fn=None):
         """Handy generic method for querying the parse tree.
 
         class_type must be a valid Astroid node class
@@ -116,6 +116,8 @@ class Indexer(object):
         node_list is an optional list of nodes to scan *instead* of
         the default parse tree. Note: node_list is expected to be a
         flat list and not a parse tree."""
+        assert attr is not None or closed_fn is not None, \
+            'Either closed_fn or attr must be non-None'
         # If we are given an explicit list of nodes to search, use
         # that instead; otherwise, go find all the nodes matching
         # class_type.
@@ -127,11 +129,20 @@ class Indexer(object):
         if comparator is None:
             comparator = self.compare
         for node in nodes:
+            # if we are given a closed_fn argument we must first make
+            # sure it's callable. After that, we simply call it with
+            # the pertinent arguments (node and attr) and store its
+            # result. If only Python has defmacro. sigh.
+            if (closed_fn is not None) and (expected_attr_value is not None):
+                assert callable(closed_fn), 'closed_fn must be callable!'
+                # Pass back in the comparator function, even though it
+                # may be the same as what we were called with.
+                result = closed_fn(node, comp=comparator)
             # If we are given a None value for expected_attr_value
             # then simply assume we want everything as a shorthand.
-            if expected_attr_value is not None:
+            if (closed_fn is None) and (expected_attr_value is not None):
                 result = comparator(getattr(node, attr), expected_attr_value)
-            else:
+            elif expected_attr_value is None:
                 result = True
             if result:
                 matches.append(node)
@@ -144,6 +155,20 @@ class Indexer(object):
                               comparator=None, node_list=None):
         return self._compare_by_attr(Function, 'name', expected_attr_value,
                                      comparator, node_list)
+
+    def find_function_by_argcount(self, expected_attr_value=None,
+                                  comparator=None, node_list=None):
+        def argcounter(node, comp):
+            # This is a bit grizzly: we basically rely on the side
+            # effect that bool(), if given something that it can treat
+            # as True, is equivalent to 1.
+            return comp(len(node.args.args) +
+                        bool(node.args.vararg) +
+                        bool(node.args.kwarg),
+                        expected_attr_value)
+        return self._compare_by_attr(Function, None, expected_attr_value,
+                                     None, node_list,
+                                     closed_fn=argcounter)
 
     def find_class_by_name(self, expected_attr_value=None,
                               comparator=None, node_list=None):
