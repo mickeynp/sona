@@ -117,6 +117,8 @@ class TestOutputFormatter(unittest.TestCase):
             def print_single_result(self, result, formatted_result):
                  self._test_results.add(formatted_result)
 
+            def post_output(self):
+                pass
 
         self.output = OutputFormatterTest()
         self.tmpfile = tempfile.NamedTemporaryFile()
@@ -150,6 +152,9 @@ class TestGrepOutputFormatter(unittest.TestCase):
 
             def output(self, s):
                 self._test_results.add(s)
+
+            def post_output(self):
+                pass
 
         self.output = OutputFormatterTest()
         self.tmpfile = tempfile.NamedTemporaryFile()

@@ -275,7 +275,6 @@ class GrepOutputFormatter(OutputFormatterBase):
             result=formatted_result)
         self.output(output)
 
-
 class JSONOutputFormatter(OutputFormatterBase):
 
     _store = []
