@@ -1,13 +1,10 @@
-======
- Sona
-======
-
-Introduction
-============
+====
+Sona
+====
 
 Sona is a language-aware search tool for Python. Instead of searching for string patterns you tell Sona you want a all function definitions with a name ``name``. In other words, Sona uses the syntactic and semantic constructs of your source code to find matches.
 
-Sona uses a concept called Assertion-Based Search. By mixing assertions with simple conditions (like ``==`` and ``!=``) you can tell Sona not only *what* you want (be it functions, classes, variable assignments, and so on) but *which* ones you want. A naïve Boolean query language is not sufficient to capture both dimensions easily.
+Sona uses a concept called Assertion-Based Search. By mixing assertions with simple conditions (like ``==`` and ``!=``) you can tell Sona not only *what* you want (be it functions, classes, variable assignments, and so on) but *which* ones you want. A naive Boolean query language is not sufficient to capture both dimensions easily.
 
 As great as ``grep`` is, it's a line-based pattern tool; it knows nothing about what it searches and makes no effort to distinguish between comments, strings and code. Sona uses static analysis to parse your source code -- no actual code is ever executed -- and can therefore uncover things based on the *structure* of your code: want a list of all functions declared in your source files? No problem.
 
