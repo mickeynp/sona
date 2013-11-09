@@ -5,8 +5,6 @@ import logging
 import os
 import json
 
-#from multiprocessing import Queue, Pool
-import gevent
 from sona.parser import AssertionParser
 from sona.indexer import Indexer, NoNodeError
 
