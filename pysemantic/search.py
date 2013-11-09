@@ -53,9 +53,11 @@ class SemanticSearcher(object):
     aggressive_search = False
 
 
-    def add_file(self, filepath, pool_workers=5):
+    def add_file(self, filepath):
         self.files.append(filepath)
-        self.pool_workers = pool_workers
+
+    def add_files(self, iterable):
+        self.files.extend(iterable)
 
     def __init__(self):
         self.files = []
