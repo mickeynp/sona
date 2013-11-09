@@ -70,8 +70,11 @@ class PySemantic(object):
             # (sub-)directory.
             # TODO: better way?
             err_output = comms[1]
+            log.debug('Stderr Output from Git: %s', err_output)
             if 'Not a git repository'.upper() in err_output.upper():
                 raise NotGitRepoError('This directory does not have a git repository')
+            else:
+                log.info('It would appear we are in a git directory')
 
             # Strip the newline from the shell output. If we are AT
             # the git root directory we just get a blank string;
@@ -82,11 +85,13 @@ class PySemantic(object):
         try:
             root_dir = get_git_root()
 
+            log.debug('Calling Git ls files command: "%s"', ','.join(GIT_LS_FILES_COMMAND))
             proc = subprocess.Popen(GIT_LS_FILES_COMMAND, stdout=subprocess.PIPE)
             output = proc.communicate()[0]
 
             os.chdir(root_dir)
             files = output.split('\0')
+            log.debug('\tFound %d files', len(files))
             for filename in files:
                 absfn = os.path.abspath(filename)
                 if fnmatch.fnmatch(absfn, pattern):
