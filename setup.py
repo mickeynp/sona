@@ -10,13 +10,13 @@ with open('LICENSE') as f:
     license = f.read()
 
 setup(
-    name='pysemantic',
-    version='0.0.1',
-    description='PySemantic',
+    name='sona',
+    version='0.1',
+    description='Sona',
     long_description=readme,
     author='Mickey Petersen',
     author_email='mickey@masteringemacs.org',
-    url='https://github.com/mickeynp/pysemantic',
+    url='https://github.com/mickeynp/sona',
     license=license,
     packages=find_packages(exclude=('tests', 'docs'))
 )

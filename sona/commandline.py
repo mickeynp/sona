@@ -7,19 +7,25 @@ import logging
 import argparse
 import astroid
 import fnmatch
-from pysemantic.search import SemanticSearcher, GrepOutputFormatter
+from sona.search import SemanticSearcher, GrepOutputFormatter, JSONOutputFormatter
 from pyparsing import ParseException
 
-log = logging.getLogger('pysemantic')
+log = logging.getLogger('sona')
 
 def create_argparser():
-    parser = argparse.ArgumentParser(description='PySemantic Query System',
-                                     prog='pysemantic')
-    parser.add_argument('search', nargs='+', help='search for something', metavar=('search'))
+    parser = argparse.ArgumentParser(prog=r"""
+ ____
+/ ___|  ___  _ __   __ _
+\___ \ / _ \| '_ \ / _` |
+ ___) | (_) | | | | (_| |
+|____/ \___/|_| |_|\__,_|
+
+    Query System
+""")
+    parser.add_argument('search', nargs='+', help='search for something (default)', metavar='search')
     parser.add_argument('--no-git', action='store_true', help='do not use git to find files [default: %(default)s]')
     parser.add_argument('--log-level', choices=['debug', 'info', 'warning', 'error', 'critical', 'none'],
                         help='show only logs from this level and above', default='error')
-    parser.add_argument('-f', '--file')
     parser.add_argument('-o', '--output-format', choices=['emacs', 'json', 'grep'], default='grep',
                         help="output format for the results")
     return parser
@@ -28,7 +34,7 @@ def create_argparser():
 FORMATTER_MAP = {
     'grep': GrepOutputFormatter,
     'emacs': None,
-    'json': None,
+    'json': JSONOutputFormatter,
     }
 
 LOG_LEVELS = {
@@ -49,7 +55,7 @@ GIT_GET_ROOT = ('git', 'rev-parse', '--show-cdup')
 class NotGitRepoError(Exception):
     pass
 
-class PySemantic(object):
+class Sona(object):
     """User-Interface Class for the commandline
 
     This class interfaces with the user through the commandline and
@@ -121,9 +127,12 @@ class PySemantic(object):
                             format='%(levelname)s - %(message)s')
         log.debug('Starting up')
         if self.args.search:
-            _, query = self.args.search
+            if self.args.search[0] == 'search':
+                query = self.args.search[1:]
+            else:
+                query = self.args.search
             try:
-                self.make_search_query(query)
+                self.make_search_query(' '.join(query))
             except ParseException, err:
                 log.critical('Parsing failed because...')
                 log.critical(err.line)
@@ -137,7 +146,7 @@ class PySemantic(object):
 def main():
     parser = create_argparser()
     args = parser.parse_args()
-    pyse = PySemantic(args)
+    pyse = Sona(args)
     pyse.go()
 
 if __name__ == "__main__":

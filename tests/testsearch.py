@@ -9,7 +9,7 @@ try:
 except ImportError:
     import unittest
 
-from pysemantic.search import SemanticSearcher, OutputFormatterBase, GrepOutputFormatter, return_sane_filepath
+from sona.search import SemanticSearcher, OutputFormatterBase, GrepOutputFormatter, return_sane_filepath
 from astroid.nodes import Function
 import astroid.nodes
 

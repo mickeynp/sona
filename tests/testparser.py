@@ -7,7 +7,7 @@ try:
 except ImportError:
     import unittest
 
-from pysemantic.parser import AssertionParser
+from sona.parser import AssertionParser
 import pyparsing
 
 log = logging.getLogger(__name__)

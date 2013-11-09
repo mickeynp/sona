@@ -9,7 +9,7 @@ try:
 except ImportError:
     import unittest
 
-from pysemantic.indexer import Indexer, NoNodeError
+from sona.indexer import Indexer, NoNodeError
 import astroid.nodes
 
 

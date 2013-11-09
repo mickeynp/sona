@@ -3,11 +3,12 @@
 
 import logging
 import os
+import json
 
 #from multiprocessing import Queue, Pool
 import gevent
-from pysemantic.parser import AssertionParser
-from pysemantic.indexer import Indexer, NoNodeError
+from sona.parser import AssertionParser
+from sona.indexer import Indexer, NoNodeError
 
 from astroid import builder, InferenceError, NotFoundError
 from astroid.nodes import Module, Function, Lambda, Class
@@ -16,15 +17,15 @@ from astroid.bases import NodeNG
 log = logging.getLogger(__name__)
 
 
-class PySemanticError(Exception):
+class SonaError(Exception):
     pass
-class SemanticSearcherError(PySemanticError):
+class SemanticSearcherError(SonaError):
     pass
 class NoSemanticIndexerError(SemanticSearcherError):
     pass
 class InvalidAssertionError(SemanticSearcherError):
     pass
-class FormatterError(PySemanticError):
+class FormatterError(SonaError):
     pass
 
 
@@ -195,6 +196,11 @@ class OutputFormatterBase(object):
         By default it is stdout (via print)"""
         print text
 
+    def post_output(self):
+        """Called post facto after a print_all_results run has
+        completed."""
+        raise NotImplementedError
+
     def print_single_result(self, result, formatted_result):
         """Abstract method. Called for every result by
         print_all_results with the original result object and
@@ -209,6 +215,7 @@ class OutputFormatterBase(object):
         results = results or self.results
         for result in results:
             self.print_single_result(result, self.format_single_result(result))
+        self.post_output()
 
     def format_single_result(self, result):
         """Dispatcher method that formats result based on its node type.
@@ -267,3 +274,20 @@ class GrepOutputFormatter(OutputFormatterBase):
             lineno=result.lineno,
             result=formatted_result)
         self.output(output)
+
+
+class JSONOutputFormatter(OutputFormatterBase):
+
+    _store = []
+
+    def output(self, text):
+        """Outputs text in JSON format to stdout."""
+        self._store.append(text)
+
+    def print_single_result(self, result, formatted_result):
+        self.output({'filename': return_sane_filepath(result.root().file),
+                     'lineno': result.lineno,
+                     'result': formatted_result,})
+
+    def post_output(self):
+        print json.dumps(self._store)

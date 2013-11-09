@@ -1,25 +1,25 @@
-============
- PySemantic
-============
+======
+ Sona
+======
 
 Introduction
 ============
 
-PySemantic is a language-aware search tool for Python. Instead of searching for string patterns you search for semantic or syntactic constructs using series of assertions about what you want to find.
+Sona is a language-aware search tool for Python. Instead of searching for string patterns you search for semantic or syntactic constructs using series of assertions about what you want to find.
 
-PySemantic uses a concept called Assertion-Based Search. By mixing assertions with simple conditions (like ``==`` and ``!=``) you can tell PySemantic not only *what* you want (be it functions, classes, variable assignments, and so on) but *which* ones you want. A naïve Boolean query language is not sufficient to capture both dimensions.
+Sona uses a concept called Assertion-Based Search. By mixing assertions with simple conditions (like ``==`` and ``!=``) you can tell Sona not only *what* you want (be it functions, classes, variable assignments, and so on) but *which* ones you want. A naïve Boolean query language is not sufficient to capture both dimensions.
 
-As great as ``grep`` is, it's a line-based pattern tool; it knows nothing about what it searches and makes no effort to distinguish between comments, strings and code. PySemantic uses static analysis to parse your source code -- no actual code is ever executed -- and can therefore uncover things based on the *structure* of your code: want a list of all functions declared in your source files? No problem.
+As great as ``grep`` is, it's a line-based pattern tool; it knows nothing about what it searches and makes no effort to distinguish between comments, strings and code. Sona uses static analysis to parse your source code -- no actual code is ever executed -- and can therefore uncover things based on the *structure* of your code: want a list of all functions declared in your source files? No problem.
 
-Why You Should Use PySemantic
+Why You Should Use Sona
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * Python-aware search. Search by function/class name definitions, imports in a module, function calls, and more;
-* PySemantic understands git and will search for files that exist only in git;
+* Sona understands git and will search for files that exist only in git;
 * Simple, expressive and powerful assertion-based language with Python regular expression support;
 * Comes with built-in support for Emacs;
-* PySemantic uses multiprocessing to speed up parsing;
-* PySemantic understands code with syntax errors in it, and will try to parse it anyway;
+* Sona uses multiprocessing to speed up parsing;
+* Sona understands code with syntax errors in it, and will try to parse it anyway;
 * User-friendly command line interface aimed at developers;
 
 Simple Assertion Examples
@@ -30,7 +30,7 @@ Here's a few sample queries to whet your appetite. Let's start with one of the m
 
    fn:name
 
-This simply tells PySemantic you want all function *declarations* from all the files you tell it to search.
+This simply tells Sona you want all function *declarations* from all the files you tell it to search.
 
 If you want to narrow down the scope of function declarations to just the ones matching a certain string, you could make the following assertion
 
