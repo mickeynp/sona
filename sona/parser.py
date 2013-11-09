@@ -23,7 +23,7 @@ class AssertionParser(object):
 
     Field = Identifier + Suppress(Literal(':')) + Identifier
 
-    Conditional = (Keyword("==") | Keyword("!=") | Keyword("in") | Keyword("not in"))
+    Conditional = (Keyword("==") | Keyword("!=") | Keyword("in") | (Keyword("not") + Keyword("in")).setParseAction(lambda s, l, t: 'not in'))
 
     Assertion = Field + Conditional + (String | Number | Set)
 
