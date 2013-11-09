@@ -18,13 +18,14 @@ class AssertionParser(object):
     BoolConstant = Keyword("True") | Keyword("False")
     String = QuotedString('"') | QuotedString("'")
     Number = Word(nums).setParseAction(lambda s, l, t: [int(t[0])])
+    Set = Group(Suppress('{') + delimitedList(String | Number, delim=',') + Suppress('}'))
     Identifier = Word(IDENTIFIER)
 
     Field = Identifier + Suppress(Literal(':')) + Identifier
 
-    Conditional = (Keyword("==") | Keyword("!="))
+    Conditional = (Keyword("==") | Keyword("!=") | Keyword("in") | Keyword("not in"))
 
-    Assertion = Field + Conditional + (String | Number)
+    Assertion = Field + Conditional + (String | Number | Set)
 
     Expression = Group(Assertion | Field) + ZeroOrMore(Suppress(",") + Group(Assertion | Field))
 

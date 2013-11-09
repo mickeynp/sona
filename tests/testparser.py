@@ -38,6 +38,16 @@ class AssertionParserTest(unittest.TestCase):
         with self.assertRaises(pyparsing.ParseException):
             ap.String.parseString("'Test String\"")
 
+    def test_set(self):
+        ap = AssertionParser()
+        pt = set(ap.Set.parseString("{42, 'hello world', 10}").asList()[0])
+        self.assertSetEqual(pt, set([42, 'hello world', 10]))
+
+    def test_set_wrong(self):
+        ap = AssertionParser()
+        with self.assertRaises(pyparsing.ParseException):
+            pt = set(ap.Set.parseString("{42, 'hello world', 10, foo bar}").asList()[0])
+
     def test_field(self):
         ap = AssertionParser()
         pt = ap.Field.parseString("testfield:testattr")
@@ -60,6 +70,10 @@ class AssertionParserTest(unittest.TestCase):
         self.assertEqual(pt.pop(), '==')
         pt = ap.Conditional.parseString("!=")
         self.assertEqual(pt.pop(), '!=')
+        pt = ap.Conditional.parseString("in")
+        self.assertEqual(pt.pop(), 'in')
+        pt = ap.Conditional.parseString("not in")
+        self.assertEqual(pt.pop(), 'not in')
 
     def test_assertion(self):
         ap = AssertionParser()
@@ -78,6 +92,13 @@ class AssertionParserTest(unittest.TestCase):
         self.assertEqual(pt.pop(0), 'argcount')
         self.assertEqual(pt.pop(0), '==')
         self.assertEqual(pt.pop(0), 3)
+
+    def test_assertion_set(self):
+        ap = AssertionParser()
+        pt = ap.Assertion.parseString('fn:name in {"fn1", "fn2"}').asList()
+        self.assertEqual(pt, ['fn', 'name', 'in', ['fn1', 'fn2']])
+        pt = ap.Assertion.parseString('fn:name not in {"fn1", "fn2"}').asList()
+        self.assertEqual(pt, ['fn', 'name', 'not in', ['fn1', 'fn2']])
 
     def test_assertion_error(self):
         ap = AssertionParser()

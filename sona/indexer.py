@@ -172,7 +172,7 @@ class Indexer(object):
                         bool(node.args.kwarg),
                         expected_attr_value)
         return self._compare_by_attr(Function, None, expected_attr_value,
-                                     None, node_list,
+                                     comparator, node_list,
                                      closed_fn=argcounter)
 
     def find_class_by_name(self, expected_attr_value=None,

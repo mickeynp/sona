@@ -39,6 +39,8 @@ INDEXER_MAPS = {
 COMPARATOR_MAP = {
     '==': lambda a,b: a == b,
     '!=': lambda a,b: a != b,
+    'in': lambda a,b: a in b,
+    'not in': lambda a,b: a not in b,
     }
 
 class SemanticSearcher(object):
@@ -96,6 +98,17 @@ class SemanticSearcher(object):
                         comp_value = None
                     else:
                         node_type, node_attr, conditional, comp_value = assertion
+                    # We need to do this here - annoyingly - because
+                    # the behaviour of the default ParseResults object
+                    # is not consistent with standard Python
+                    # containers.
+                    if comp_value is not None:
+                        # Just try and call asList() - if that fails,
+                        # fall through and do nothing.
+                        try:
+                            comp_value = comp_value.asList()
+                        except AttributeError:
+                            pass
 
                     try:
                         comparator = COMPARATOR_MAP[conditional]
@@ -283,6 +296,9 @@ class GrepOutputFormatter(OutputFormatterBase):
             lineno=result.lineno,
             result=formatted_result)
         self.output(output)
+
+    def post_output(self):
+        pass
 
 class JSONOutputFormatter(OutputFormatterBase):
 
