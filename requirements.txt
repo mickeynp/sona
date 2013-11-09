@@ -3,4 +3,3 @@ nose
 astroid
 unittest2
 argparse
-rednose
