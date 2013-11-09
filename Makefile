@@ -3,4 +3,4 @@ init:
 install:
 	python setup.py install
 test:
-	nosetests -v --rednose --failed --with-coverage --cover-package=pysemantic tests
+	nosetests -v --rednose --failed --with-coverage --cover-package=sona tests
