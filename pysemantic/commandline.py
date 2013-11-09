@@ -104,7 +104,8 @@ class PySemantic(object):
             except NotGitRepoError:
                 # Just do nothing. We need a fall through - such as
                 # using the current directory?
-                log.error('Not in a git repo. Specify file pattern instead.')
+                log.error('Not in a git repository. Specify file pattern instead.')
+                return
         results = ss.search(query)
         self.formatter.print_all_results(results)
 
