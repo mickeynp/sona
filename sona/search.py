@@ -155,17 +155,28 @@ class SemanticSearcher(object):
         for node in all_nodes:
             yield node
 
+
     def search(self, query):
-        jobs = [gevent.spawn(SemanticSearcher._do_search, filename, query)
-                for filename in self.files]
-        gevent.joinall(jobs)
-        for job in jobs:
+        for filename in self.files:
             # There may be many nodes returned from each job, so we
             # need to iterate over them and, sigh, yield them again...
             # Also, this is as good a time as any to sort the items by
             # line number.
-            for node in sorted(job.value, key=lambda n: n.lineno):
+            results = SemanticSearcher._do_search(filename, query)
+            for node in sorted(results, key=lambda n: n.lineno):
                 yield node
+
+    # def search(self, query):
+    #     jobs = [gevent.spawn(SemanticSearcher._do_search, filename, query)
+    #             for filename in self.files]
+    #     gevent.joinall(jobs)
+    #     for job in jobs:
+    #         # There may be many nodes returned from each job, so we
+    #         # need to iterate over them and, sigh, yield them again...
+    #         # Also, this is as good a time as any to sort the items by
+    #         # line number.
+    #         for node in sorted(job.value, key=lambda n: n.lineno):
+    #             yield node
 
 
 
