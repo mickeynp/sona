@@ -12,25 +12,6 @@ from pyparsing import ParseException
 
 log = logging.getLogger('sona')
 
-def create_argparser():
-    parser = argparse.ArgumentParser(prog=r"""
- ____
-/ ___|  ___  _ __   __ _
-\___ \ / _ \| '_ \ / _` |
- ___) | (_) | | | | (_| |
-|____/ \___/|_| |_|\__,_|
-
-    Query System
-""")
-    parser.add_argument('search', nargs='+', help='search for something (default)', metavar='search')
-    parser.add_argument('--no-git', action='store_true', help='do not use git to find files [default: %(default)s]')
-    parser.add_argument('--log-level', choices=['debug', 'info', 'warning', 'error', 'critical', 'none'],
-                        help='show only logs from this level and above', default='error')
-    parser.add_argument('-o', '--output-format', choices=['emacs', 'json', 'grep'], default='grep',
-                        help="output format for the results")
-    return parser
-
-
 FORMATTER_MAP = {
     'grep': GrepOutputFormatter,
     'emacs': None,
@@ -55,6 +36,68 @@ GIT_GET_ROOT = ('git', 'rev-parse', '--show-cdup')
 class NotGitRepoError(Exception):
     pass
 
+def get_git_root():
+    """Attempts to get the Git root directory from os.curdir via Git
+    commandline.
+
+    This approach is undoubtedly brittle and may fail in some cases.
+
+    TODO: Is there a better way to do this ? """
+    proc = subprocess.Popen(GIT_GET_ROOT, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    comms = proc.communicate()
+    output = comms[0]
+    # Hackish way of determining if we are in a git-controlled
+    # (sub-)directory.
+    # TODO: better way?
+    err_output = comms[1]
+    log.debug('Stderr Output from git: %s', err_output)
+    if 'Not a git repository'.upper() in err_output.upper():
+        raise NotGitRepoError('This directory does not have a git repository')
+    else:
+        log.info('It would appear we are in a git directory')
+
+    # Strip the newline from the shell output. If we are AT
+    # the git root directory we just get a blank string;
+    # replace that with a '.' to signify this directory.
+    return output.strip() or '.'
+
+def is_in_git_repo():
+    """Returns True if os.curdir is in a git repository"""
+    try:
+        get_git_root()
+    except NotGitRepoError:
+        return False
+    else:
+        return True
+
+def create_argparser():
+    desc = r"""
+ ____
+/ ___|  ___  _ __   __ _
+\___ \ / _ \| '_ \ / _` |
+ ___) | (_) | | | | (_| |
+|____/ \___/|_| |_|\__,_|
+
+       Query System
+
+usage: sona search EXPRESSION FILES
+usage (with git): sona search EXPRESSION
+
+This directory is {0}git controlled.
+
+""".format('' if is_in_git_repo() else 'not ')
+    parser = argparse.ArgumentParser(description=desc, formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     usage=argparse.SUPPRESS)
+    parser.add_argument('search', nargs='+', help='search for something (default)', metavar='search')
+    parser.add_argument('--no-git', action='store_true', help='do not use git to find files [default: %(default)s]')
+    parser.add_argument('--log-level', choices=['debug', 'info', 'warning', 'error', 'critical', 'none'],
+                        help='show only logs from this level and above', default='error')
+    parser.add_argument('-o', '--output-format', choices=['emacs', 'json', 'grep'], default='grep',
+                        help="output format for the results")
+    return parser
+
+
 class Sona(object):
     """User-Interface Class for the commandline
 
@@ -67,25 +110,6 @@ class Sona(object):
 
         This raises an exception if it is invoked from outside a
         git-controlled directory. """
-        def get_git_root():
-            proc = subprocess.Popen(GIT_GET_ROOT, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE)
-            comms = proc.communicate()
-            output = comms[0]
-            # Hackish way of determining if we are in a git-controlled
-            # (sub-)directory.
-            # TODO: better way?
-            err_output = comms[1]
-            log.debug('Stderr Output from Git: %s', err_output)
-            if 'Not a git repository'.upper() in err_output.upper():
-                raise NotGitRepoError('This directory does not have a git repository')
-            else:
-                log.info('It would appear we are in a git directory')
-
-            # Strip the newline from the shell output. If we are AT
-            # the git root directory we just get a blank string;
-            # replace that with a '.' to signify this directory.
-            return output.strip() or '.'
         log.debug('Reading files from git repository...')
         old_cwd = os.curdir
         try:
@@ -126,6 +150,8 @@ class Sona(object):
         logging.basicConfig(level=LOG_LEVELS[self.args.log_level],
                             format='%(levelname)s - %(message)s')
         log.debug('Starting up')
+        if not self.args.search:
+            print 'usage: sona EXPRESSION'
         if self.args.search:
             if self.args.search[0] == 'search':
                 query = self.args.search[1:]

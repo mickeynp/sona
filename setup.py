@@ -18,6 +18,11 @@ setup(
     author_email='mickey@masteringemacs.org',
     url='https://github.com/mickeynp/sona',
     license=license,
-    packages=find_packages(exclude=('tests', 'docs'))
+    packages=find_packages(exclude=('tests', 'docs')),
+    entry_points = {
+        'console_scripts': [
+            'sona = sona.commandline:main',
+            ],
+        },
 )
 
