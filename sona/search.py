@@ -159,12 +159,15 @@ class SemanticSearcher(object):
         the purposes of enabling paralleism with multiprocessing."""
         tree = AssertionParser(query).tree
         log.info('Commencing with parsing of file %s', filename)
-        indexer = Indexer(filename)
-        all_nodes = SemanticSearcher._find_query_in_module(tree,
-                                                           query,
-                                                           indexer)
-        for node in all_nodes:
-            yield node
+        try:
+            indexer = Indexer(filename)
+            all_nodes = SemanticSearcher._find_query_in_module(tree,
+                                                               query,
+                                                               indexer)
+            for node in all_nodes:
+                yield node
+        except SyntaxError:
+            log.critical('Syntax Error in %s. Skipping...', filename)
 
 
     def search(self, query):
