@@ -179,3 +179,12 @@ class Indexer(object):
                               comparator=None, node_list=None):
         return self._compare_by_attr(Class, 'name', expected_attr_value,
                                      comparator, node_list)
+
+    def find_parent_by_name(self, expected_attr_value=None,
+                              comparator=None, node_list=None):
+        def check_parent(node, comp):
+            return comp(node.parent.name, expected_attr_value)
+            
+        return self._compare_by_attr(Function, None, expected_attr_value,
+                                     comparator, node_list,
+                                     closed_fn=check_parent)

@@ -32,6 +32,7 @@ INDEXER_MAPS = {
     # <Node type>, <Equiv Attr on Node Class>
     ('fn', 'name'): Indexer.find_function_by_name,
     ('fn', 'argcount'): Indexer.find_function_by_argcount,
+    ('fn', 'parent'): Indexer.find_parent_by_name,
     ('cls', 'name'): Indexer.find_class_by_name,
     }
 

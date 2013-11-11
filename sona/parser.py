@@ -25,7 +25,7 @@ class AssertionParser(object):
 
     Conditional = (Keyword("==") | Keyword("!=") | Keyword("in") | (Keyword("not") + Keyword("in")).setParseAction(lambda s, l, t: 'not in'))
 
-    Assertion = Field + Conditional + (String | Number | Set)
+    Assertion = (Field + Conditional + (String | Number | Set))
 
     Expression = Group(Assertion | Field) + ZeroOrMore(Suppress(",") + Group(Assertion | Field))
 

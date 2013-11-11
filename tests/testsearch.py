@@ -134,6 +134,36 @@ class SearchTest(unittest.TestCase):
         self.assertEqual(set([node.name for node in nodes]), set(['fn2', 'fn3', 'fn1']))
 
 
+class AdvSearchTest(unittest.TestCase):
+
+    def setUp(self):
+        self.searcher = SemanticSearcher()
+        self.tmpfile = tempfile.NamedTemporaryFile()
+        self.tmpfile.write("""
+class ParentOfChild(BaseOne, BaseTwo):
+    pass
+
+class Child(ParentOfChild):
+    def method(self):
+        pass
+""")
+        self.tmpfile.flush()
+
+    def test_find_parent(self):
+        self.searcher.add_file(self.tmpfile.name)
+        nodes = set(self.searcher.search('fn:name == "method", fn:parent == "Child"'))
+        self.assert_(len(nodes) == 1)
+        self.assertEqual(set([node.name for node in nodes]), set(['method']))
+        self.assertEqual(set([node.parent.name for node in nodes]), set(['Child']))
+
+    def test_find_parent_only(self):
+        self.searcher.add_file(self.tmpfile.name)
+        # should be identical to this below
+        nodes = set(self.searcher.search('fn:parent == "Child"'))
+        self.assert_(len(nodes) == 1)
+        self.assertEqual(set([node.name for node in nodes]), set(['method']))
+        self.assertEqual(set([node.parent.name for node in nodes]), set(['Child']))
+        
 class TestOutputFormatter(unittest.TestCase):
 
     def setUp(self):
