@@ -156,6 +156,17 @@ class Indexer(object):
         else:
             return matches
 
+    def _get_all_parents(self, node):
+        """Yields the entire parent hierarchy of node"""
+        n = node
+        while n.parent:
+            try:
+                parent = n.parent
+                yield parent
+                n = parent
+            except AttributeError:
+                break
+            
     def find_function_by_name(self, expected_attr_value=None,
                               comparator=None, node_list=None):
         return self._compare_by_attr(Function, 'name', expected_attr_value,
@@ -183,8 +194,14 @@ class Indexer(object):
     def find_parent_by_name(self, expected_attr_value=None,
                               comparator=None, node_list=None):
         def check_parent(node, comp):
-            return comp(node.parent.name, expected_attr_value)
-            
+            for parent_node in self._get_all_parents(node):
+                try:
+                    return comp(parent_node.name, expected_attr_value)
+                except AttributeError:
+                    pass
+            # Fall-through.
+            return False
+
         return self._compare_by_attr(Function, None, expected_attr_value,
                                      comparator, node_list,
                                      closed_fn=check_parent)
