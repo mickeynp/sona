@@ -292,7 +292,7 @@ def return_sane_filepath(filepath, root_dir='.'):
 
 class GrepOutputFormatter(OutputFormatterBase):
 
-    GREP_OUTPUT_FORMAT = '{filename}:{lineno}:{result}'
+    GREP_OUTPUT_FORMAT = './{filename}:{lineno}:{result}'
 
     def print_single_result(self, result, formatted_result):
         output = self.GREP_OUTPUT_FORMAT.format(
