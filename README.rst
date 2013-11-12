@@ -179,19 +179,19 @@ This is a complete list of locators known to Sona.
 |                        |matches all function definitions with 2 |
 |                        |or 3 arguments.                         |
 +------------------------+----------------------------------------+
-|``parent``              |Matches the direct parent class of a    |
+|``parent``              |Matches a parent of a                   |
 |                        |function definition.                    |
 |                        |                                        |
 |                        |Example: ``fn:parent == "MyClass"``     |
-|                        |matches all functions that have a direct|
+|                        |matches all functions that have a       |
 |                        |parent called ``MyClass``.              |
 +------------------------+----------------------------------------+
 
 
-+------------------------------------------------------------------+
-|          ``cls``: Fields involving Classes.                      |
-+========================+=========================================+
-|``name``                |Matches the name of a class definition.  |
-|                        |                                         |
-|                        |Example: ``cls:name == 'MyClass'``.      |
-+------------------------+-----------------------------------------+
++-----------------------------------------------------------------+
+|          ``cls``: Fields involving Classes.                     |
++========================+========================================+
+|``name``                |Matches the name of a class definition. |
+|                        |                                        |
+|                        |Example: ``cls:name == 'MyClass'``.     |
++------------------------+----------------------------------------+
