@@ -5,7 +5,8 @@ import logging
 import itertools
 
 from astroid import builder, InferenceError, NotFoundError
-from astroid.nodes import Module, Function, Class
+from astroid.nodes import Module, Function, Class, CallFunc, Assign, AssName, Name
+from astroid.node_classes import Getattr
 from astroid.bases import YES, BUILTINS, NodeNG
 from astroid.manager import AstroidManager
 from astroid.utils import ASTWalker
@@ -177,7 +178,7 @@ class Indexer(object):
                 n = parent
             except AttributeError:
                 break
-            
+
     def find_function_by_name(self, expected_attr_value=None,
                               comparator=None, node_list=None):
         return self._compare_by_attr(Function, 'name', expected_attr_value,
@@ -216,3 +217,33 @@ class Indexer(object):
         return self._compare_by_attr(Function, None, expected_attr_value,
                                      comparator, node_list,
                                      closed_fn=check_parent)
+
+    @staticmethod
+    def _find_immediate_name(n):
+        """Finds the immediate name of a CallFunc node."""
+        try:
+            if isinstance(n, CallFunc):
+                # A function may turn out to be an attribute on
+                # something else; quite possibly a class. If it's an
+                # attribute that we "call" -- use its attrname instead
+                # of just "name".
+                if isinstance(n.func, Getattr):
+                    return n.func.attrname
+                else:
+                    return n.func.name
+            else:
+                return n.name
+        except AttributeError:
+            return ''
+
+    def find_function_by_call(self, expected_attr_value=None,
+                          comparator=None, node_list=None):
+
+        def call_function(node, comp):
+            return comp(
+                self._find_immediate_name(node),
+                expected_attr_value
+                )
+        return self._compare_by_attr(CallFunc, None, expected_attr_value,
+                                     comparator, node_list,
+                                     closed_fn=call_function)

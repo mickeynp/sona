@@ -33,6 +33,7 @@ INDEXER_MAPS = {
     ('fn', 'name'): Indexer.find_function_by_name,
     ('fn', 'argcount'): Indexer.find_function_by_argcount,
     ('fn', 'parent'): Indexer.find_parent_by_name,
+    ('fn', 'call'): Indexer.find_function_by_call,
     ('cls', 'name'): Indexer.find_class_by_name,
     }
 
@@ -266,6 +267,10 @@ not exist on class {2!r}'.format(result, name, self))
             node.name,
             node.args.format_args() or ''
             )
+        return fmt
+
+    def _format_CallFunc(self, node):
+        fmt = 'call -> {0}'.format(node.as_string())
         return fmt
 
     def _format_Class(self, node):

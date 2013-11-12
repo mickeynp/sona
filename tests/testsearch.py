@@ -163,7 +163,7 @@ class Child(ParentOfChild):
         self.assert_(len(nodes) == 1)
         self.assertEqual(set([node.name for node in nodes]), set(['method']))
         self.assertEqual(set([node.parent.name for node in nodes]), set(['Child']))
-        
+
 class TestOutputFormatter(unittest.TestCase):
 
     def setUp(self):

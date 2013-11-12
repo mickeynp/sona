@@ -23,6 +23,8 @@ def fn1(a, b, c, *args, **kwargs):
 def fn2(a, b):
     def fn3():
         pass
+
+variable = fn2(fn1())
 """
 class IndexerTest(unittest.TestCase):
 
@@ -60,6 +62,8 @@ class IndexerTest(unittest.TestCase):
         self.assertIsInstance(node, astroid.nodes.Function)
         self.assertEqual(node.name, 'fn1')
 
+    def test_find_function_by_call(self):
+        nodes = self.index.find_function_by_call('fn2')
         self.assert_(len(nodes) == 1)
         node = nodes.pop()
         self.assertEqual(node.func.name, 'fn2')
