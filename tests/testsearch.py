@@ -225,9 +225,9 @@ class TestGrepOutputFormatter(unittest.TestCase):
         self.searcher.add_file(self.tmpfile.name)
         results = self.searcher.search('fn:name')
         expected = set([
-                "%s:6:def fn1(a='hello')" % return_sane_filepath(self.tmpfile.name),
-                '%s:2:def fn2(arg1, arg2)' % return_sane_filepath(self.tmpfile.name),
-                '%s:3:def fn3(*myargs, **mykwargs)' % return_sane_filepath(self.tmpfile.name),
+                "./%s:6:def fn1(a='hello')" % return_sane_filepath(self.tmpfile.name),
+                './%s:2:def fn2(arg1, arg2)' % return_sane_filepath(self.tmpfile.name),
+                './%s:3:def fn3(*myargs, **mykwargs)' % return_sane_filepath(self.tmpfile.name),
                 ]
             )
         self.output.print_all_results(results)
