@@ -2,7 +2,8 @@
 #  -*- coding: utf-8 -*-
 
 import logging
-import os
+import itertools
+
 from astroid import builder, InferenceError, NotFoundError
 from astroid.nodes import Module, Function, Class
 from astroid.bases import YES, BUILTINS, NodeNG
@@ -13,17 +14,14 @@ from collections import defaultdict
 
 log = logging.getLogger(__name__)
 
-
-
-
 class BaseSemanticError(Exception):
     pass
 
 class NoNodeError(BaseSemanticError):
-    def __init__(self, class_type, attr, query):
+    def __init__(self, class_types, attr, query):
         msg = 'Cannot find a node {0!r} with attr {1!r} matching query {2!r}'\
-            .format(class_type, attr, query)
-        self.class_type = class_type
+            .format(class_types, attr, query)
+        self.class_types = class_types
         self.query = query
         super(NoNodeError, self).__init__(self, msg)
 
@@ -44,6 +42,10 @@ class IndexVisitor(ASTWalker):
         self._nodemap[node.__class__].append(node)
 
         methods = self.get_callbacks(node)
+        if node.parent is not None:
+            self.visit(node.parent)
+        for child in node.get_children():
+            self.visit(child)
         if methods[0] is not None:
             methods[0](node)
         if 'locals' in node.__dict__: # skip Instance and other proxy
@@ -76,6 +78,7 @@ class Indexer(object):
     def __init__(self, filename):
         """Builds an Indexer given s, a string object."""
         self._filename = filename
+        self._visitor = None
         tree = builder.AstroidBuilder().file_build(filename)
         self.tree = tree
 
@@ -85,23 +88,27 @@ class Indexer(object):
     #     with open(filename) as f:
     #         return cls(f.read())
 
-    def find(self, node_class):
-        """Searches a Visitor's nodemap for a particular class.
+    def find(self, *node_classes):
+        """Searches a Visitor's nodemap for particular classes.
 
         The class, node_class, must derive from astroid.nodes.BaseNG."""
-        assert issubclass(node_class, NodeNG)
-        visitor = IndexVisitor()
-        visitor.visit(self.tree)
-        nodes = visitor.nodes
-        return nodes.get(node_class, [])
-
+        if self._visitor is None:
+            self._visitor = IndexVisitor()
+            self._visitor.visit(self.tree)
+        nodes = self._visitor.nodes
+        for cls in node_classes:
+            assert issubclass(cls, NodeNG)
+            matching_nodes = nodes.get(cls, [])
+            for node in matching_nodes:
+                yield node
 
     # Specific locators for various node classes.
-    def _compare_by_attr(self, class_type, attr=None, expected_attr_value=None,
+    def _compare_by_attr(self, class_types, attr=None, expected_attr_value=None,
                          comparator=None, node_list=None, closed_fn=None):
         """Handy generic method for querying the parse tree.
 
-        class_type must be a valid Astroid node class
+        class_types must be a valid Astroid node class or a tuple of
+        node classes to find.
 
         attr is the string attribute (via getattr()) that you want to
         use for the comparison
@@ -125,15 +132,19 @@ class Indexer(object):
             'Either closed_fn or attr must be non-None'
         # If we are given an explicit list of nodes to search, use
         # that instead; otherwise, go find all the nodes matching
-        # class_type.
+        # class_types.
         if node_list is None:
-            nodes = self.find(class_type)
+            nodes = itertools.chain(self.find(class_types))
         else:
             nodes = node_list
         matches = []
         if comparator is None:
             comparator = self.compare
         for node in nodes:
+            # We may not get a match against a particular node class;
+            # skip those.
+            if not node:
+                continue
             # if we are given a closed_fn argument we must first make
             # sure it's callable. After that, we simply call it with
             # the pertinent arguments (node and attr) and store its
@@ -152,7 +163,7 @@ class Indexer(object):
             if result:
                 matches.append(node)
         if not matches:
-            raise NoNodeError(class_type, attr, expected_attr_value)
+            raise NoNodeError(class_types, attr, expected_attr_value)
         else:
             return matches
 

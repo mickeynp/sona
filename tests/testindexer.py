@@ -39,9 +39,6 @@ class IndexerTest(unittest.TestCase):
         fns = set([fns.name for fns in self.index.find(astroid.nodes.Function)])
         self.assertEqual(fns, set(['fn1', 'fn2', 'fn3']))
 
-    def test_node_class_not_found(self):
-        self.assertEqual(self.index.find(astroid.nodes.Pass), [])
-
     def test_find_function_by_name(self):
         node = self.index.find_function_by_name('fn2').pop()
         self.assertIsInstance(node, astroid.nodes.Function)
@@ -62,3 +59,7 @@ class IndexerTest(unittest.TestCase):
         node = nodes.pop()
         self.assertIsInstance(node, astroid.nodes.Function)
         self.assertEqual(node.name, 'fn1')
+
+        self.assert_(len(nodes) == 1)
+        node = nodes.pop()
+        self.assertEqual(node.func.name, 'fn2')
