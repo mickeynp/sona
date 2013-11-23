@@ -143,7 +143,8 @@ class AssertionParserTest(unittest.TestCase):
         with self.assertRaises(pyparsing.ParseException):
             pt = ap.Query.parseString('fn:name cls:name, fn:name', parseAll=True)
 
-
-
-
-
+    def test_query_no_whitespaces(self):
+        ap = AssertionParser()
+        pt = ap.Query.parseString('fn:name; cls:name == "foo"')
+        pt_nospace = ap.Query.parseString('fn:name;cls:name=="foo"')
+        self.assertEqual(pt.asList(), pt_nospace.asList())

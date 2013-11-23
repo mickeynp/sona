@@ -23,11 +23,13 @@ class AssertionParser(object):
 
     Field = Identifier + Suppress(Literal(':')) + Identifier
 
-    Conditional = (Keyword("==") | Keyword("!=") | Keyword("in") | (Keyword("not") + Keyword("in")).setParseAction(lambda s, l, t: 'not in'))
+    Conditional = (Literal("==") | Literal("!=") | Literal("in") |
+                   (Literal("not") + Literal("in")).setParseAction(lambda s, l, t: 'not in'))
 
     Assertion = (Field + Conditional + (String | Number | Set))
 
-    Expression = (Group(Assertion | Field) + ZeroOrMore(Suppress(",") + Group(Assertion | Field))) | String
+    Expression = (Group(Assertion | Field) +
+                  ZeroOrMore(Suppress(",") + Group(Assertion | Field))) | String
 
     Query = Group(Expression) + Group(ZeroOrMore(Suppress(";") + Expression))
 
