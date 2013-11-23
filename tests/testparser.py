@@ -122,6 +122,11 @@ class AssertionParserTest(unittest.TestCase):
         pt = ap.Expression.parseString('fn:name, cls:name')
         self.assertEqual(pt.asList(), [['fn', 'name'], ['cls', 'name']])
 
+    def test_expr_string(self):
+        ap = AssertionParser()
+        pt = ap.Expression.parseString('"Test"')
+        self.assertEqual(pt.asList(), ['Test'])
+
     def test_query(self):
         ap = AssertionParser()
         pt = ap.Query.parseString('fn:name; cls:name == "foo"')

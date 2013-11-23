@@ -27,7 +27,7 @@ class AssertionParser(object):
 
     Assertion = (Field + Conditional + (String | Number | Set))
 
-    Expression = Group(Assertion | Field) + ZeroOrMore(Suppress(",") + Group(Assertion | Field))
+    Expression = (Group(Assertion | Field) + ZeroOrMore(Suppress(",") + Group(Assertion | Field))) | String
 
     Query = Group(Expression) + Group(ZeroOrMore(Suppress(";") + Expression))
 
