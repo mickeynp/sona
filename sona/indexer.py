@@ -49,7 +49,9 @@ class IndexVisitor(ASTWalker):
             self.visit(child)
         if methods[0] is not None:
             methods[0](node)
-        if 'locals' in node.__dict__: # skip Instance and other proxy
+        # This is needed to avoid stuff like __div__, etc. from
+        # appearing in our node list (unnecessarily.)
+        if 'locals' in node.__dict__:
             for name, local_node in node.items():
                 self.visit(local_node)
         if methods[1] is not None:
