@@ -83,12 +83,6 @@ class Indexer(object):
         tree = builder.AstroidBuilder().file_build(filename)
         self.tree = tree
 
-    # @classmethod
-    # def from_file(cls, filename):
-    #     """Builds an Indexer given f, a file-like object."""
-    #     with open(filename) as f:
-    #         return cls(f.read())
-
     def find(self, *node_classes):
         """Searches a Visitor's nodemap for particular classes.
 
