@@ -26,8 +26,6 @@ class InvalidAssertionError(SemanticSearcherError):
 class FormatterError(SonaError):
     pass
 
-
-
 INDEXER_MAPS = {
     # <Node type>, <Equiv Attr on Node Class>
     ('fn', 'name'): Indexer.find_function_by_name,
