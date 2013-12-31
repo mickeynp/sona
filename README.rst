@@ -163,7 +163,7 @@ List of Locators
 This is a complete list of locators known to Sona.
 
 +-----------------------------------------------------------------+
-|          ``fn``: Fields involving Functions.                    |
+|          ``FN``: Fields involving Functions.                    |
 +========================+========================================+
 |``name``                |Matches the name of a function          |
 |                        |definition.                             |
@@ -186,6 +186,13 @@ This is a complete list of locators known to Sona.
 |                        |matches all functions that have a       |
 |                        |parent called ``MyClass``.              |
 +------------------------+----------------------------------------+
+|``call``                |Matches all function and method calls   |
+|                        |that Sona can resolve with static       |
+|                        |analysis.                               |
+|                        |                                        |
+|                        |Example: ``fn:call == "download_file"`` |
+|                        |finds all calls to ``download_file``.   |
++------------------------+----------------------------------------+
 
 
 +-----------------------------------------------------------------+
@@ -193,5 +200,10 @@ This is a complete list of locators known to Sona.
 +========================+========================================+
 |``name``                |Matches the name of a class definition. |
 |                        |                                        |
-|                        |Example: ``cls:name == 'MyClass'``.     |
+|                        | Example: ``cls:name == 'MyClass'``.    |
+|                        |                                        |
++------------------------+----------------------------------------+
+|``parent``              |Matches the bases (parents) of a class  |
+|                        |                                        |
+|                        |Example: ``cls:parent == 'object'``.    |
 +------------------------+----------------------------------------+

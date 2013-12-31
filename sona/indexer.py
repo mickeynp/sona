@@ -106,11 +106,6 @@ class Indexer(object):
                                comparator, node_list,
                                closed_fn=argcounter)
 
-    def find_class_by_name(self, expected_attr_value=None,
-                           comparator=None, node_list=None):
-        return compare_by_attr(self, Class, 'name', expected_attr_value,
-                               comparator, node_list)
-
     def find_parent_by_name(self, expected_attr_value=None,
                             comparator=None, node_list=None):
         def check_parent(node, comp):
@@ -121,14 +116,12 @@ class Indexer(object):
                     pass
             # Fall-through.
             return False
-
         return compare_by_attr(self, Function, None, expected_attr_value,
                                comparator, node_list,
                                closed_fn=check_parent)
     
     def find_function_by_call(self, expected_attr_value=None,
                           comparator=None, node_list=None):
-
         def call_function(node, comp):
             return comp(
                 find_immediate_name(node),
@@ -137,3 +130,21 @@ class Indexer(object):
         return compare_by_attr(self, CallFunc, None, expected_attr_value,
                                comparator, node_list,
                                closed_fn=call_function)
+    ###########
+    # Classes #
+    ###########
+    def find_class_by_name(self, expected_attr_value=None,
+                           comparator=None, node_list=None):
+        return compare_by_attr(self, Class, 'name', expected_attr_value,
+                               comparator, node_list)
+
+    def find_class_by_parent(self, expected_attr_value=None,
+                             comparator=None, node_list=None):
+        def check_bases(node, comp):
+            bases = set([comp(find_immediate_name(base), expected_attr_value) for base in node.bases])
+            # node.bases might be empty so we also check that bases contains something.
+            return all(bases) and bases
+        return compare_by_attr(self, Class, None, expected_attr_value,
+                               comparator, node_list,
+                               closed_fn=check_bases)
+

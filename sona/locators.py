@@ -24,20 +24,22 @@ def compare(a, b):
 
 DEFAULT_COMPARATOR = compare
 
-def find_immediate_name(n):
+def find_immediate_name(node):
     """Finds the immediate name of a CallFunc node."""
     try:
-        if isinstance(n, CallFunc):
+        if isinstance(node, CallFunc):
             # A function may turn out to be an attribute on
             # something else; quite possibly a class. If it's an
             # attribute that we "call" -- use its attrname instead
             # of just "name".
-            if isinstance(n.func, Getattr):
-                return n.func.attrname
+            if isinstance(node.func, Getattr):
+                return node.func.attrname
             else:
-                return n.func.name
+                return node.func.name
         else:
-            return n.name
+            if isinstance(node, Getattr):
+                return node.attrname
+            return node.name
     except AttributeError:
         return ''
 
@@ -117,4 +119,5 @@ def compare_by_attr(indexer, class_types, attr=None, expected_attr_value=None,
         raise NoNodeError(class_types, attr, expected_attr_value)
     else:
         return matches
+
 

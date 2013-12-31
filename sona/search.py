@@ -7,9 +7,9 @@ import json
 
 from sona.parser import AssertionParser
 from sona.indexer import Indexer
-from sona.exceptions import NoNodeError
+from sona.exceptions import (NoNodeError, NoSemanticIndexerError,
+                             InvalidAssertionError, FormatterError)
 
-from astroid import builder, InferenceError, NotFoundError
 from astroid.nodes import Module, Function, Lambda, Class
 from astroid.bases import NodeNG
 
@@ -22,6 +22,7 @@ INDEXER_MAPS = {
     ('fn', 'parent'): Indexer.find_parent_by_name,
     ('fn', 'call'): Indexer.find_function_by_call,
     ('cls', 'name'): Indexer.find_class_by_name,
+    ('cls', 'parent'): Indexer.find_class_by_parent,
     }
 
 # TODO: This should be in parser.py?
