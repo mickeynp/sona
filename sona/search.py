@@ -6,25 +6,14 @@ import os
 import json
 
 from sona.parser import AssertionParser
-from sona.indexer import Indexer, NoNodeError
+from sona.indexer import Indexer
+from sona.exceptions import NoNodeError
 
 from astroid import builder, InferenceError, NotFoundError
 from astroid.nodes import Module, Function, Lambda, Class
 from astroid.bases import NodeNG
 
 log = logging.getLogger(__name__)
-
-
-class SonaError(Exception):
-    pass
-class SemanticSearcherError(SonaError):
-    pass
-class NoSemanticIndexerError(SemanticSearcherError):
-    pass
-class InvalidAssertionError(SemanticSearcherError):
-    pass
-class FormatterError(SonaError):
-    pass
 
 INDEXER_MAPS = {
     # <Node type>, <Equiv Attr on Node Class>
@@ -44,7 +33,8 @@ COMPARATOR_MAP = {
     }
 
 class SemanticSearcher(object):
-    """Semantic Searcher class. Returns a list of matching nodes given a string query.
+    """Semantic Searcher class. Returns a list of matching nodes given
+    a string query.
 
 
     aggressive_search - if True, an assertion that returns NoNodeError
@@ -85,7 +75,8 @@ class SemanticSearcher(object):
             for assertion in expression:
                 log.debug('\tParsing assertion %r', assertion)
                 if not len(assertion) in [2, 4]:
-                    raise InvalidAssertionError('Assertion {0!r} contained {1} items instead of\
+                    raise InvalidAssertionError(\
+                        'Assertion {0!r} contained {1} items instead of\
  the expected 2 or 4'.format(assertion, len(assertion)))
                 try:
                     if len(assertion) == 2:
@@ -117,9 +108,12 @@ class SemanticSearcher(object):
 
                     indexer_fn = INDEXER_MAPS[(node_type, node_attr)]
                     try:
-                        # This actually returns a list of nodes that matches the query.
-                        nodes = indexer_fn(indexer, comp_value, comparator=comparator, node_list=nodes)
-                        log.debug('\t\tFound %d new submatches (%d total)', len(nodes), len(matches))
+                        # This actually returns a list of nodes that
+                        # matches the query.
+                        nodes = indexer_fn(indexer, comp_value,
+                                           comparator=comparator, node_list=nodes)
+                        log.debug('\t\tFound %d new submatches (%d total)',
+                                  len(nodes), len(matches))
                         # Override the old list with the new one. We
                         # don't want stale, and now invalid (as they
                         # failed the indexer check above), to remain.

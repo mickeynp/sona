@@ -9,7 +9,9 @@ try:
 except ImportError:
     import unittest
 
-from sona.indexer import Indexer, NoNodeError
+from sona.indexer import Indexer
+from sona.exceptions import NoNodeError
+
 import astroid.nodes
 
 
