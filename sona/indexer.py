@@ -5,7 +5,8 @@ import logging
 import itertools
 
 from astroid import builder, InferenceError, NotFoundError
-from astroid.nodes import Module, Function, Class, CallFunc, Assign, AssName, Name
+from astroid.nodes import (Module, Function, Class, CallFunc, Assign,
+                           AssName, Name, Arguments, AssAttr)
 from astroid.node_classes import Getattr
 from astroid.bases import YES, BUILTINS, NodeNG
 from astroid.manager import AstroidManager
@@ -133,6 +134,7 @@ class Indexer(object):
     ###########
     # Classes #
     ###########
+
     def find_class_by_name(self, expected_attr_value=None,
                            comparator=None, node_list=None):
         return compare_by_attr(self, Class, 'name', expected_attr_value,
@@ -147,4 +149,29 @@ class Indexer(object):
         return compare_by_attr(self, Class, None, expected_attr_value,
                                comparator, node_list,
                                closed_fn=check_bases)
+
+    def find_class_method(self, expected_attr_value=None,
+                          comparator=None, node_list=None):
+        # This is functionally equivalent to:
+        #    fn:name == <name>, fn:parent == <class>
+        all_functions = self.find_function_by_name(None, comparator, node_list)
+        return self.find_parent_by_name(expected_attr_value, comparator, all_functions)
+
+
+    #############
+    # Variables #
+    #############
+
+    def find_variable_by_name(self, expected_attr_value=None,
+                              comparator=None, node_list=None):
+
+        variables = compare_by_attr(self, AssName, 'name', expected_attr_value,
+                                    comparator, node_list)
+        # Filter out variables that are "assigned" in the function
+        # arguments. It's technically an assignment but it is not what
+        # people would expect.
+        return [variable for variable in variables
+                if not isinstance(variable.parent, Arguments) #and\
+                    # not isinstance(variable.parent.parent, Function)
+                ]
 

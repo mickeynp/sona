@@ -10,7 +10,7 @@ from sona.indexer import Indexer
 from sona.exceptions import (NoNodeError, NoSemanticIndexerError,
                              InvalidAssertionError, FormatterError)
 
-from astroid.nodes import Module, Function, Lambda, Class
+from astroid.nodes import Module, Function, Lambda, Class, Arguments, For, While
 from astroid.bases import NodeNG
 
 log = logging.getLogger(__name__)
@@ -23,6 +23,9 @@ INDEXER_MAPS = {
     ('fn', 'call'): Indexer.find_function_by_call,
     ('cls', 'name'): Indexer.find_class_by_name,
     ('cls', 'parent'): Indexer.find_class_by_parent,
+    ('cls', 'method'): Indexer.find_class_method,
+    ('var', 'name'): Indexer.find_variable_by_name,
+#    ('var', 'parent'): Indexer.find_variable_by_parent,
     }
 
 # TODO: This should be in parser.py?
@@ -255,11 +258,26 @@ not exist on class {2!r}'.format(result, name, self))
     def _format_Function(self, node):
         """Formats a Function node to make it look like it would in
         Python."""
-        assert isinstance(node, Function)
+        #assert isinstance(node, Function)
         fmt = 'def {0}({1})'.format(
             node.name,
             node.args.format_args() or ''
             )
+        return fmt
+
+    def _format_AssName(self, node):
+        try:
+            if isinstance(node.parent, Arguments):
+                s = self._format_Function(node.parent.parent)
+            else:
+                # as_string() is a bit aggressive and will happily
+                # rebuild the entire body; we just want the top line
+                # the "AssName" (snicker) object is on. splitlines()
+                # will give us what we want, but it's a horrible hack.
+                s = node.parent.as_string().splitlines().pop()
+        except AttributeError:
+            s = node.as_string().splitlines().pop()
+        fmt = 'var assign -> {0}'.format(s.strip())
         return fmt
 
     def _format_CallFunc(self, node):

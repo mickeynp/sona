@@ -163,7 +163,7 @@ List of Locators
 This is a complete list of locators known to Sona.
 
 +-----------------------------------------------------------------+
-|          ``FN``: Fields involving Functions.                    |
+|          ``fn``: Fields involving Functions.                    |
 +========================+========================================+
 |``name``                |Matches the name of a function          |
 |                        |definition.                             |
@@ -188,7 +188,9 @@ This is a complete list of locators known to Sona.
 +------------------------+----------------------------------------+
 |``call``                |Matches all function and method calls   |
 |                        |that Sona can resolve with static       |
-|                        |analysis.                               |
+|                        |analysis. Overly clever dynamic         |
+|                        |dispatching/abuses of apply or eval is  |
+|                        |not going to be found.                  |
 |                        |                                        |
 |                        |Example: ``fn:call == "download_file"`` |
 |                        |finds all calls to ``download_file``.   |
@@ -207,3 +209,32 @@ This is a complete list of locators known to Sona.
 |                        |                                        |
 |                        |Example: ``cls:parent == 'object'``.    |
 +------------------------+----------------------------------------+
+
+
++-----------------------------------------------------------------+
+|          ``var``: Fields involving Variables and Assignment.    |
++========================+========================================+
+|``name``                |Matches variable names that are getting |
+|                        |assigned.                               |
+|                        |                                        |
+|                        |Example: ``var:name == 'price'`` will   |
+|                        |match all variables named ``price``     |
+|                        |that're assigned a value.               |
+|                        |                                        |
++------------------------+----------------------------------------+
+
+..
+   +------------------------+----------------------------------------+
+   |``parent``              |Matches the parent of a variable.       |
+   |                        |                                        |
+   |                        |Example: ``var:parent ==                |
+   |                        |'calculate_cost'``.                     |
+   +------------------------+----------------------------------------+
+   +------------------------+----------------------------------------+
+   |``ref``                 |Matches variable names that're          |
+   |                        |referenced or read.                     |
+   |                        |                                        |
+   |                        |Example: ``var:ref == 'price'`` will    |
+   |                        |return all variables named ``price``    |
+   |                        |that're read (referenced).              |
+   +------------------------+----------------------------------------+

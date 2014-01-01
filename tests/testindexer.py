@@ -98,3 +98,43 @@ class OldClass: pass
         nodes = indexer.find_class_by_parent('FooBase')
         self.assert_(len(nodes), 2)
 
+    def test_find_class_method(self):
+        indexer = mk_indexer(r"""
+class Foo(object):
+    def method1(self): pass
+
+class Bar(Foo):
+    def method2(self): pass
+""")
+
+        # None finds all
+        nodes = indexer.find_class_method('Foo')
+        self.assert_(len(nodes), 1)
+        # Error
+        with self.assertRaises(NoNodeError):
+            nodes = indexer.find_class_method('wrongname')
+            self.assert_(len(nodes), 0)
+
+
+    def test_find_variable_name(self):
+        indexer = mk_indexer(r"""
+a = 42
+b = 0
+def foo(a, b):
+   b = a + a
+   for a in [1,2,3]: pass
+   print b
+
+""")
+
+        # None finds all
+        nodes = indexer.find_variable_by_name('a')
+        # assignment and for loop.
+        self.assert_(len(nodes), 2)
+        # Error
+        with self.assertRaises(NoNodeError):
+            nodes = indexer.find_variable_by_name('c')
+            self.assert_(len(nodes), 0)
+        nodes = indexer.find_variable_by_name('b')
+        self.assert_(len(nodes), 2)
+        
