@@ -6,7 +6,7 @@ Sona is a language-aware command line search tool for Python. Sona understands P
 
 Sona is a truly versatile tool for any Python developer. It all but eliminates the need for grepping, whether you're hunting for a function definition you know exist *somewhere* -- or if you're looking for something more complex, like a method belonging to a particular class with a precise number of arguments.
 
-Sona uses a concept called Assertion-Based Search. By mixing assertions with simple, familiar, conditions (like ``==``, ``!=``, ``in`` and ``not in``) you can tell Sona not only *what* you want (be it functions, classes, variable assignments, and so on) but *which* ones you want. A naive Boolean query language is not sufficient to capture both dimensions easily.
+Sona uses a concept called Assertion-Based Search. By mixing assertions with simple, familiar, conditionals (like ``==``, ``!=``, ``in`` and ``not in``) you can tell Sona not only *what* you want (be it functions, classes, variable assignments, and so on) but *which* ones you want. A naive Boolean query language is not sufficient to capture both dimensions easily.
 
 As great as ``grep`` is, it's a line-based pattern tool; it knows nothing about what it searches and makes no effort to distinguish between comments, strings and code. Sona uses static analysis to parse your source code -- no actual code is ever executed -- and can therefore uncover things based on the *structure* of your code: want a list of all functions declared in your source files? No problem.
 
@@ -186,6 +186,15 @@ This is a complete list of locators known to Sona.
 |                        |matches all functions that have a       |
 |                        |parent called ``MyClass``.              |
 +------------------------+----------------------------------------+
+|``call``                |Matches all function and method calls   |
+|                        |that Sona can resolve with static       |
+|                        |analysis. Overly clever dynamic         |
+|                        |dispatching/abuses of apply or eval is  |
+|                        |not going to be found.                  |
+|                        |                                        |
+|                        |Example: ``fn:call == "download_file"`` |
+|                        |finds all calls to ``download_file``.   |
++------------------------+----------------------------------------+
 
 
 +-----------------------------------------------------------------+
@@ -193,5 +202,39 @@ This is a complete list of locators known to Sona.
 +========================+========================================+
 |``name``                |Matches the name of a class definition. |
 |                        |                                        |
-|                        |Example: ``cls:name == 'MyClass'``.     |
+|                        | Example: ``cls:name == 'MyClass'``.    |
+|                        |                                        |
 +------------------------+----------------------------------------+
+|``parent``              |Matches the bases (parents) of a class  |
+|                        |                                        |
+|                        |Example: ``cls:parent == 'object'``.    |
++------------------------+----------------------------------------+
+
+
++-----------------------------------------------------------------+
+|          ``var``: Fields involving Variables and Assignment.    |
++========================+========================================+
+|``name``                |Matches variable names that are getting |
+|                        |assigned.                               |
+|                        |                                        |
+|                        |Example: ``var:name == 'price'`` will   |
+|                        |match all variables named ``price``     |
+|                        |that're assigned a value.               |
+|                        |                                        |
++------------------------+----------------------------------------+
+
+..
+   +------------------------+----------------------------------------+
+   |``parent``              |Matches the parent of a variable.       |
+   |                        |                                        |
+   |                        |Example: ``var:parent ==                |
+   |                        |'calculate_cost'``.                     |
+   +------------------------+----------------------------------------+
+   +------------------------+----------------------------------------+
+   |``ref``                 |Matches variable names that're          |
+   |                        |referenced or read.                     |
+   |                        |                                        |
+   |                        |Example: ``var:ref == 'price'`` will    |
+   |                        |return all variables named ``price``    |
+   |                        |that're read (referenced).              |
+   +------------------------+----------------------------------------+

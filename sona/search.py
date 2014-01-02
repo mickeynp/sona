@@ -6,25 +6,14 @@ import os
 import json
 
 from sona.parser import AssertionParser
-from sona.indexer import Indexer, NoNodeError
+from sona.indexer import Indexer
+from sona.exceptions import (NoNodeError, NoSemanticIndexerError,
+                             InvalidAssertionError, FormatterError)
 
-from astroid import builder, InferenceError, NotFoundError
-from astroid.nodes import Module, Function, Lambda, Class
+from astroid.nodes import Module, Function, Lambda, Class, Arguments, For, While
 from astroid.bases import NodeNG
 
 log = logging.getLogger(__name__)
-
-
-class SonaError(Exception):
-    pass
-class SemanticSearcherError(SonaError):
-    pass
-class NoSemanticIndexerError(SemanticSearcherError):
-    pass
-class InvalidAssertionError(SemanticSearcherError):
-    pass
-class FormatterError(SonaError):
-    pass
 
 INDEXER_MAPS = {
     # <Node type>, <Equiv Attr on Node Class>
@@ -33,6 +22,10 @@ INDEXER_MAPS = {
     ('fn', 'parent'): Indexer.find_parent_by_name,
     ('fn', 'call'): Indexer.find_function_by_call,
     ('cls', 'name'): Indexer.find_class_by_name,
+    ('cls', 'parent'): Indexer.find_class_by_parent,
+    ('cls', 'method'): Indexer.find_class_method,
+    ('var', 'name'): Indexer.find_variable_by_name,
+#    ('var', 'parent'): Indexer.find_variable_by_parent,
     }
 
 # TODO: This should be in parser.py?
@@ -44,7 +37,8 @@ COMPARATOR_MAP = {
     }
 
 class SemanticSearcher(object):
-    """Semantic Searcher class. Returns a list of matching nodes given a string query.
+    """Semantic Searcher class. Returns a list of matching nodes given
+    a string query.
 
 
     aggressive_search - if True, an assertion that returns NoNodeError
@@ -85,7 +79,8 @@ class SemanticSearcher(object):
             for assertion in expression:
                 log.debug('\tParsing assertion %r', assertion)
                 if not len(assertion) in [2, 4]:
-                    raise InvalidAssertionError('Assertion {0!r} contained {1} items instead of\
+                    raise InvalidAssertionError(\
+                        'Assertion {0!r} contained {1} items instead of\
  the expected 2 or 4'.format(assertion, len(assertion)))
                 try:
                     if len(assertion) == 2:
@@ -117,9 +112,12 @@ class SemanticSearcher(object):
 
                     indexer_fn = INDEXER_MAPS[(node_type, node_attr)]
                     try:
-                        # This actually returns a list of nodes that matches the query.
-                        nodes = indexer_fn(indexer, comp_value, comparator=comparator, node_list=nodes)
-                        log.debug('\t\tFound %d new submatches (%d total)', len(nodes), len(matches))
+                        # This actually returns a list of nodes that
+                        # matches the query.
+                        nodes = indexer_fn(indexer, comp_value,
+                                           comparator=comparator, node_list=nodes)
+                        log.debug('\t\tFound %d new submatches (%d total)',
+                                  len(nodes), len(matches))
                         # Override the old list with the new one. We
                         # don't want stale, and now invalid (as they
                         # failed the indexer check above), to remain.
@@ -260,11 +258,26 @@ not exist on class {2!r}'.format(result, name, self))
     def _format_Function(self, node):
         """Formats a Function node to make it look like it would in
         Python."""
-        assert isinstance(node, Function)
+        #assert isinstance(node, Function)
         fmt = 'def {0}({1})'.format(
             node.name,
             node.args.format_args() or ''
             )
+        return fmt
+
+    def _format_AssName(self, node):
+        try:
+            if isinstance(node.parent, Arguments):
+                s = self._format_Function(node.parent.parent)
+            else:
+                # as_string() is a bit aggressive and will happily
+                # rebuild the entire body; we just want the top line
+                # the "AssName" (snicker) object is on. splitlines()
+                # will give us what we want, but it's a horrible hack.
+                s = node.parent.as_string().splitlines().pop()
+        except AttributeError:
+            s = node.as_string().splitlines().pop()
+        fmt = 'var assign -> {0}'.format(s.strip())
         return fmt
 
     def _format_CallFunc(self, node):

@@ -5,7 +5,8 @@ import logging
 import itertools
 
 from astroid import builder, InferenceError, NotFoundError
-from astroid.nodes import Module, Function, Class, CallFunc, Assign, AssName, Name
+from astroid.nodes import (Module, Function, Class, CallFunc, Assign,
+                           AssName, Name, Arguments, AssAttr)
 from astroid.node_classes import Getattr
 from astroid.bases import YES, BUILTINS, NodeNG
 from astroid.manager import AstroidManager
@@ -13,18 +14,9 @@ from astroid.utils import ASTWalker
 from astroid.as_string import AsStringVisitor
 from collections import defaultdict
 
+from sona.locators import compare_by_attr, get_all_parents, find_immediate_name
+
 log = logging.getLogger(__name__)
-
-class BaseSemanticError(Exception):
-    pass
-
-class NoNodeError(BaseSemanticError):
-    def __init__(self, class_types, attr, query):
-        msg = 'Cannot find a node {0!r} with attr {1!r} matching query {2!r}'\
-            .format(class_types, attr, query)
-        self.class_types = class_types
-        self.query = query
-        super(NoNodeError, self).__init__(self, msg)
 
 
 class IndexVisitor(ASTWalker):
@@ -73,10 +65,6 @@ class Indexer(object):
     # another class.
 
     # Comparator function to use for comparisons
-    @staticmethod
-    def compare(a, b):
-        """Case-sensitive comparison"""
-        return a == b
 
     def __init__(self, filename):
         """Builds an Indexer given s, a string object."""
@@ -99,86 +87,10 @@ class Indexer(object):
             for node in matching_nodes:
                 yield node
 
-    # Specific locators for various node classes.
-    def _compare_by_attr(self, class_types, attr=None, expected_attr_value=None,
-                         comparator=None, node_list=None, closed_fn=None):
-        """Handy generic method for querying the parse tree.
-
-        class_types must be a valid Astroid node class or a tuple of
-        node classes to find.
-
-        attr is the string attribute (via getattr()) that you want to
-        use for the comparison
-
-        expected_attr_value is the expected attribute value. If it's
-        None, it means \"always match\".
-
-        comparator is the comparison function to use to compare the
-        attribute value on each node against expected_attr_value. If
-        it is None, use the default == comparison.
-
-        node_list is an optional list of nodes to scan *instead* of
-        the default parse tree. Note: node_list is expected to be a
-        flat list and not a parse tree.
-
-        closed_fn is an optional callable that is call and closed over
-        the variables node and comparator. Its result is used to
-        determine whether a node should be included in the matches
-        list. """
-        assert attr is not None or closed_fn is not None, \
-            'Either closed_fn or attr must be non-None'
-        # If we are given an explicit list of nodes to search, use
-        # that instead; otherwise, go find all the nodes matching
-        # class_types.
-        if node_list is None:
-            nodes = itertools.chain(self.find(class_types))
-        else:
-            nodes = node_list
-        matches = []
-        if comparator is None:
-            comparator = self.compare
-        for node in nodes:
-            # We may not get a match against a particular node class;
-            # skip those.
-            if not node:
-                continue
-            # if we are given a closed_fn argument we must first make
-            # sure it's callable. After that, we simply call it with
-            # the pertinent arguments (node and attr) and store its
-            # result. If only Python has defmacro. sigh.
-            if (closed_fn is not None) and (expected_attr_value is not None):
-                assert callable(closed_fn), 'closed_fn must be callable!'
-                # Pass back in the comparator function, even though it
-                # may be the same as what we were called with.
-                result = closed_fn(node, comp=comparator)
-            # If we are given a None value for expected_attr_value
-            # then simply assume we want everything as a shorthand.
-            if (closed_fn is None) and (expected_attr_value is not None):
-                result = comparator(getattr(node, attr), expected_attr_value)
-            elif expected_attr_value is None:
-                result = True
-            if result:
-                matches.append(node)
-        if not matches:
-            raise NoNodeError(class_types, attr, expected_attr_value)
-        else:
-            return matches
-
-    def _get_all_parents(self, node):
-        """Yields the entire parent hierarchy of node"""
-        n = node
-        while n.parent:
-            try:
-                parent = n.parent
-                yield parent
-                n = parent
-            except AttributeError:
-                break
-
     def find_function_by_name(self, expected_attr_value=None,
                               comparator=None, node_list=None):
-        return self._compare_by_attr(Function, 'name', expected_attr_value,
-                                     comparator, node_list)
+        return compare_by_attr(self, Function, 'name', expected_attr_value,
+                               comparator, node_list)
 
     def find_function_by_argcount(self, expected_attr_value=None,
                                   comparator=None, node_list=None):
@@ -190,56 +102,76 @@ class Indexer(object):
                         bool(node.args.vararg) +
                         bool(node.args.kwarg),
                         expected_attr_value)
-        return self._compare_by_attr(Function, None, expected_attr_value,
-                                     comparator, node_list,
-                                     closed_fn=argcounter)
 
-    def find_class_by_name(self, expected_attr_value=None,
-                              comparator=None, node_list=None):
-        return self._compare_by_attr(Class, 'name', expected_attr_value,
-                                     comparator, node_list)
+        return compare_by_attr(self, Function, None, expected_attr_value,
+                               comparator, node_list,
+                               closed_fn=argcounter)
 
     def find_parent_by_name(self, expected_attr_value=None,
-                              comparator=None, node_list=None):
+                            comparator=None, node_list=None):
         def check_parent(node, comp):
-            for parent_node in self._get_all_parents(node):
+            for parent_node in get_all_parents(node):
                 try:
                     return comp(parent_node.name, expected_attr_value)
                 except AttributeError:
                     pass
             # Fall-through.
             return False
-
-        return self._compare_by_attr(Function, None, expected_attr_value,
-                                     comparator, node_list,
-                                     closed_fn=check_parent)
-
-    @staticmethod
-    def _find_immediate_name(n):
-        """Finds the immediate name of a CallFunc node."""
-        try:
-            if isinstance(n, CallFunc):
-                # A function may turn out to be an attribute on
-                # something else; quite possibly a class. If it's an
-                # attribute that we "call" -- use its attrname instead
-                # of just "name".
-                if isinstance(n.func, Getattr):
-                    return n.func.attrname
-                else:
-                    return n.func.name
-            else:
-                return n.name
-        except AttributeError:
-            return ''
-
+        return compare_by_attr(self, Function, None, expected_attr_value,
+                               comparator, node_list,
+                               closed_fn=check_parent)
+    
     def find_function_by_call(self, expected_attr_value=None,
                           comparator=None, node_list=None):
-
         def call_function(node, comp):
             return comp(
-                self._find_immediate_name(node),
+                find_immediate_name(node),
                 expected_attr_value
                 )
-        return self._compare_by_attr(CallFunc, None, expected_attr_value,
-                                     comparator, node_list,
-                                     closed_fn=call_function)
+        return compare_by_attr(self, CallFunc, None, expected_attr_value,
+                               comparator, node_list,
+                               closed_fn=call_function)
+    ###########
+    # Classes #
+    ###########
+
+    def find_class_by_name(self, expected_attr_value=None,
+                           comparator=None, node_list=None):
+        return compare_by_attr(self, Class, 'name', expected_attr_value,
+                               comparator, node_list)
+
+    def find_class_by_parent(self, expected_attr_value=None,
+                             comparator=None, node_list=None):
+        def check_bases(node, comp):
+            bases = set([comp(find_immediate_name(base), expected_attr_value) for base in node.bases])
+            # node.bases might be empty so we also check that bases contains something.
+            return all(bases) and bases
+        return compare_by_attr(self, Class, None, expected_attr_value,
+                               comparator, node_list,
+                               closed_fn=check_bases)
+
+    def find_class_method(self, expected_attr_value=None,
+                          comparator=None, node_list=None):
+        # This is functionally equivalent to:
+        #    fn:name == <name>, fn:parent == <class>
+        all_functions = self.find_function_by_name(None, comparator, node_list)
+        return self.find_parent_by_name(expected_attr_value, comparator, all_functions)
+
+
+    #############
+    # Variables #
+    #############
+
+    def find_variable_by_name(self, expected_attr_value=None,
+                              comparator=None, node_list=None):
+
+        variables = compare_by_attr(self, AssName, 'name', expected_attr_value,
+                                    comparator, node_list)
+        # Filter out variables that are "assigned" in the function
+        # arguments. It's technically an assignment but it is not what
+        # people would expect.
+        return [variable for variable in variables
+                if not isinstance(variable.parent, Arguments) #and\
+                    # not isinstance(variable.parent.parent, Function)
+                ]
+
